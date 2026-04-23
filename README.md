@@ -141,3 +141,4 @@ Then open `dashboard.html` in your browser.
 - Swap SQLite for Postgres when you deploy
 - Add real predictive modeling from accumulated personal data
 - Layer in AI-generated explanations on top of the rule-based engine
+# Physiology-and-Alignment-System
