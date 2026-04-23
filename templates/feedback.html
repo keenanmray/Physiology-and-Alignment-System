@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sleep System Feedback</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page">
+    <nav class="topnav">
+      <a href="{{ url_for('index') }}">Dashboard</a>
+      <a class="active" href="{{ url_for('history') }}">History</a>
+    </nav>
+
+    <section class="hero compact">
+      <div>
+        <p class="eyebrow">Evening Reflection</p>
+        <h1>Close the day with honesty.</h1>
+        <p class="lede">
+          This is the evening half of the system. Reflect on what actually happened, what felt alive, and where the day felt aligned or draining.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h2>Day under review</h2>
+        <p>Date logged: {{ entry.date }}</p>
+        <p>Rule tomorrow score: {{ entry.tomorrow_score if entry.tomorrow_score is not none else "N/A" }}</p>
+        <p>ML readiness score: {{ entry.ml_prediction if entry.ml_prediction is not none else "N/A" }}</p>
+        {% if entry.north_star %}
+          <p>Morning North Star: {{ entry.north_star }}</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <form class="panel table-panel" method="post">
+      <div class="panel-head">
+        <h2>Evening Reflection</h2>
+        <p>Close the loop by recording how you actually felt, what gave you energy, and what pulled you away from alignment.</p>
+      </div>
+      <div class="grid">
+        <label>
+          <span>Actual Energy (0-100)</span>
+          <input name="actual_energy" value="{{ entry.actual_energy if entry.actual_energy is not none else '' }}">
+        </label>
+        <label>
+          <span>Actual Focus (0-100)</span>
+          <input name="actual_focus" value="{{ entry.actual_focus if entry.actual_focus is not none else '' }}">
+        </label>
+        <label>
+          <span>Actual Readiness (0-100)</span>
+          <input name="actual_readiness" value="{{ entry.actual_readiness if entry.actual_readiness is not none else '' }}">
+        </label>
+        <label class="wide">
+          <span>What made you feel alive?</span>
+          <input name="alive_moment" value="{{ entry.alive_moment if entry.alive_moment else '' }}">
+        </label>
+        <label class="wide">
+          <span>What felt draining or less aligned?</span>
+          <input name="drained_moment" value="{{ entry.drained_moment if entry.drained_moment else '' }}">
+        </label>
+        <label>
+          <span>Alignment Score (0-100)</span>
+          <input name="alignment_score" value="{{ entry.alignment_score if entry.alignment_score is not none else '' }}">
+        </label>
+        <label class="wide">
+          <span>One lesson from today</span>
+          <input name="evening_lesson" value="{{ entry.evening_lesson if entry.evening_lesson else '' }}">
+        </label>
+        <label class="wide">
+          <span>Notes</span>
+          <input name="feedback_notes" value="{{ entry.feedback_notes if entry.feedback_notes else '' }}">
+        </label>
+      </div>
+      <button type="submit">Save Feedback</button>
+    </form>
+  </main>
+</body>
+</html>

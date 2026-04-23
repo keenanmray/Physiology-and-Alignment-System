@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sleep System History</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page">
+    <nav class="topnav">
+      <a class="{{ 'active' if active_page == 'dashboard' else '' }}" href="{{ url_for('index') }}">Dashboard</a>
+      <a class="{{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('history') }}">History</a>
+    </nav>
+
+    <section class="hero compact">
+      <div>
+        <p class="eyebrow">Sleep System History</p>
+        <h1>Track real patterns.</h1>
+        <p class="lede">
+          This view makes the app feel like a full product: durable storage, a usable history table,
+          and trend snapshots that help you evaluate whether the model is directionally right.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h2>Current footprint</h2>
+        <p>{{ metrics.tracked_days }} tracked entries with the latest log on {{ metrics.latest_date }}.</p>
+      </div>
+    </section>
+
+    <section class="trend-grid">
+      {% for card in trend_cards %}
+        <article class="panel trend-card">
+          <div class="trend-head">
+            <h3>{{ card.title }}</h3>
+            <span>{{ card.latest if card.latest is not none else "N/A" }}</span>
+          </div>
+          {% if card.points %}
+            <svg viewBox="0 0 360 120" role="img" aria-label="{{ card.title }} trend">
+              <polyline fill="none" stroke="{{ card.stroke }}" stroke-width="4" points="{{ card.points }}"></polyline>
+            </svg>
+          {% else %}
+            <p class="muted">Not enough data yet to draw a trend.</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+
+    <section class="panel table-panel">
+      <div class="panel-head">
+        <h2>Recent Entries</h2>
+        <p>The last 30 logs, newest first.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Sleep</th>
+              <th>Focus</th>
+              <th>Recovery</th>
+              <th>Performance</th>
+              <th>Tomorrow</th>
+              <th>ML Readiness</th>
+              <th>Actual</th>
+              <th>Sunrise</th>
+              <th>Circadian</th>
+              <th>Alignment</th>
+              <th>Evening</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in entries %}
+              <tr>
+                <td>{{ entry.date }}</td>
+                <td>{{ entry.sleep_hours if entry.sleep_hours is not none else "N/A" }}</td>
+                <td>{{ entry.focus_minutes }}</td>
+                <td>{{ entry.recovery }}</td>
+                <td>{{ entry.performance_score }}</td>
+                <td>{{ entry.tomorrow_score if entry.tomorrow_score is not none else "N/A" }}</td>
+                <td>{{ entry.ml_prediction if entry.ml_prediction is not none else "N/A" }}</td>
+                <td>{{ entry.actual_readiness if entry.actual_readiness is not none else "N/A" }}</td>
+                <td>{{ entry.sunrise_local if entry.sunrise_local else "N/A" }}</td>
+                <td>{{ entry.circadian_status if entry.circadian_status else "N/A" }}</td>
+                <td>{{ entry.alignment_score if entry.alignment_score is not none else "N/A" }}</td>
+                <td><a href="{{ url_for('feedback', entry_id=entry.id) }}">Reflect</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {% if feedback_summary.feedback_count %}
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <h2>Calibration Summary</h2>
+          <p>This is the beginning of a real learning loop.</p>
+        </div>
+        <ul>
+          <li>Entries with actual feedback: {{ feedback_summary.feedback_count }}</li>
+          {% if feedback_summary.rule_mae is not none %}
+            <li>Rule-based MAE vs actual readiness: {{ feedback_summary.rule_mae }}</li>
+          {% endif %}
+          {% if feedback_summary.ml_mae is not none %}
+            <li>ML MAE vs actual readiness: {{ feedback_summary.ml_mae }}</li>
+          {% endif %}
+        </ul>
+      </section>
+    {% endif %}
+
+    {% if alignment_summary.alignment_count %}
+      <section class="panel table-panel">
+        <div class="panel-head">
+          <h2>Alignment Summary</h2>
+          <p>Purpose and reflection now sit beside physiology and prediction.</p>
+        </div>
+        <ul>
+          <li>Entries with alignment reflection: {{ alignment_summary.alignment_count }}</li>
+          {% if alignment_summary.average_alignment is not none %}
+            <li>Average alignment score: {{ alignment_summary.average_alignment }}</li>
+          {% endif %}
+        </ul>
+      </section>
+    {% endif %}
+  </main>
+</body>
+</html>

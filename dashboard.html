@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sleep System Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4efe5;
+      --panel: #fffaf2;
+      --ink: #1e1d1a;
+      --muted: #6a655b;
+      --accent: #0b6e4f;
+      --accent-2: #d17b0f;
+      --accent-3: #235789;
+      --line: #d8cfbf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at top left, rgba(209,123,15,0.14), transparent 24%),
+        radial-gradient(circle at top right, rgba(35,87,137,0.12), transparent 22%),
+        var(--bg);
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 40px 20px 72px;
+    }
+    .hero {
+      display: grid;
+      gap: 18px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(255,250,242,0.96), rgba(246,239,228,0.94));
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(44, 36, 24, 0.08);
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0;
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 {
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      line-height: 0.95;
+      max-width: 10ch;
+    }
+    .sub {
+      max-width: 60ch;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.5;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.6);
+      font-size: 0.95rem;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .stat {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .stat .label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+    .stat .value {
+      font-size: 2rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat .delta {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .section {
+      margin-top: 26px;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .chart-card, .notes {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--panel);
+      padding: 18px;
+    }
+    .chart-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .chart-head span, .chart-range, .empty {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .chart-range {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      overflow: visible;
+    }
+    .grid {
+      stroke: #e9dfd0;
+      stroke-width: 1;
+    }
+    .notes ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+    }
+    .notes li {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 20px 14px 40px;
+      }
+      .hero {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">Sleep System Dashboard</p>
+      <h1>Behavior drives tomorrow.</h1>
+      <p class="sub">
+        This dashboard reframes your project away from generic sleep tracking and toward
+        a behavioral performance engine: a system that links daily choices to recovery,
+        energy, circadian alignment, and next-day readiness.
+      </p>
+      <div class="meta">
+        <span class="pill">Latest entry: 2026-04-15</span>
+        <span class="pill">Tracked days: 76</span>
+        <span class="pill">Portfolio angle: explainable decision engine</span>
+      </div>
+      <div class="stats">
+        <article class="stat">
+          <div class="label">Latest Performance</div>
+          <div class="value">61.3</div>
+          <div class="delta">up 12.3 pts vs last entry</div>
+        </article>
+        <article class="stat">
+          <div class="label">Avg Sleep Hours</div>
+          <div class="value">8.5</div>
+          <div class="delta">down 0.1 hrs vs last entry</div>
+        </article>
+        <article class="stat">
+          <div class="label">Latest Tomorrow Score</div>
+          <div class="value">64.0</div>
+          <div class="delta">No trend yet</div>
+        </article>
+        <article class="stat">
+          <div class="label">Latest Recovery</div>
+          <div class="value">87.2</div>
+          <div class="delta">up 8.2 pts vs last entry</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Trends</h2>
+      <div class="charts">
+        
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Performance Score</h3>
+        <span>61.3 latest</span>
+      </div>
+      <svg viewBox="0 0 640 220" role="img" aria-label="Performance Score trend line">
+        <line x1="24" y1="24.0" x2="616" y2="24.0" class="grid" /><line x1="24" y1="81.3" x2="616" y2="81.3" class="grid" /><line x1="24" y1="138.7" x2="616" y2="138.7" class="grid" /><line x1="24" y1="196.0" x2="616" y2="196.0" class="grid" />
+        <polyline fill="none" stroke="#0b6e4f" stroke-width="4" points="71.4,167.7 79.3,70.6 87.1,176.6 95.0,176.6 102.9,176.6 110.8,176.6 118.7,196.0 126.6,196.0 134.5,196.0 142.4,186.6 150.3,186.6 158.2,176.6 166.1,176.6 174.0,176.6 181.9,162.7 189.8,162.7 197.7,135.0 205.5,137.2 213.4,137.2 221.3,181.0 229.2,181.0 237.1,162.7 245.0,162.7 252.9,181.0 260.8,24.0 268.7,162.7 276.6,28.4 284.5,181.0 292.4,181.0 300.3,181.0 308.2,167.1 316.1,167.1 323.9,181.0 331.8,30.7 339.7,30.7 347.6,30.7 355.5,174.4 363.4,177.7 371.3,177.7 379.2,177.7 387.1,177.7 395.0,177.7 402.9,140.5 410.8,140.5 418.7,162.7 426.6,162.7 434.5,162.7 442.3,79.5 450.2,79.5 458.1,79.5 466.0,79.5 473.9,79.5 481.8,79.5 489.7,79.5 497.6,172.1 505.5,172.1 513.4,61.2 521.3,61.2 529.2,137.2 537.1,158.8 545.0,68.9 552.9,172.1 560.7,176.6 568.6,153.3 576.5,153.3 584.4,24.0 592.3,24.0 600.2,24.0 608.1,135.0 616.0,66.7" />
+      </svg>
+      <div class="chart-range">
+        <span>Min 38.0</span>
+        <span>Max 69.0</span>
+      </div>
+    </div>
+    
+        
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Sleep Duration</h3>
+        <span>9.0 latest</span>
+      </div>
+      <svg viewBox="0 0 640 220" role="img" aria-label="Sleep Duration trend line">
+        <line x1="24" y1="24.0" x2="616" y2="24.0" class="grid" /><line x1="24" y1="81.3" x2="616" y2="81.3" class="grid" /><line x1="24" y1="138.7" x2="616" y2="138.7" class="grid" /><line x1="24" y1="196.0" x2="616" y2="196.0" class="grid" />
+        <polyline fill="none" stroke="#d17b0f" stroke-width="4" points="24.0,196.0 31.9,196.0 39.8,196.0 47.7,146.2 55.6,146.2 63.5,146.2 71.4,146.2 79.3,146.2 87.1,138.3 95.0,138.3 102.9,138.3 110.8,138.3 118.7,97.3 126.6,97.3 134.5,97.3 142.4,97.3 150.3,97.3 158.2,97.3 166.1,97.3 174.0,97.3 181.9,65.0 189.8,65.0 197.7,65.0 205.5,65.0 213.4,65.0 221.3,162.8 229.2,162.8 237.1,162.8 245.0,162.8 252.9,129.5 260.8,106.1 268.7,106.1 276.6,106.1 284.5,134.4 292.4,134.4 300.3,134.4 308.2,134.4 316.1,134.4 323.9,134.4 331.8,134.4 339.7,134.4 347.6,134.4 355.5,188.2 363.4,133.5 371.3,133.5 379.2,133.5 387.1,133.5 395.0,133.5 402.9,133.5 410.8,133.5 418.7,48.4 426.6,48.4 434.5,48.4 442.3,106.1 450.2,106.1 458.1,32.8 466.0,79.7 473.9,79.7 481.8,79.7 489.7,79.7 497.6,72.9 505.5,72.9 513.4,89.5 521.3,89.5 529.2,162.8 537.1,65.0 545.0,162.8 552.9,143.2 560.7,24.0 568.6,24.0 576.5,24.0 584.4,72.9 592.3,72.9 600.2,56.3 608.1,56.3 616.0,65.0" />
+      </svg>
+      <div class="chart-range">
+        <span>Min 7.7</span>
+        <span>Max 9.4</span>
+      </div>
+    </div>
+    
+        
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Circadian Shift</h3>
+        <span>-17.8 latest</span>
+      </div>
+      <svg viewBox="0 0 640 220" role="img" aria-label="Circadian Shift trend line">
+        <line x1="24" y1="24.0" x2="616" y2="24.0" class="grid" /><line x1="24" y1="81.3" x2="616" y2="81.3" class="grid" /><line x1="24" y1="138.7" x2="616" y2="138.7" class="grid" /><line x1="24" y1="196.0" x2="616" y2="196.0" class="grid" />
+        <polyline fill="none" stroke="#235789" stroke-width="4" points="24.0,160.0 31.9,160.0 39.8,160.0 47.7,160.0 55.6,156.7 63.5,156.7 71.4,156.7 79.3,156.7 87.1,156.7 95.0,156.7 102.9,156.7 110.8,156.7 118.7,192.7 126.6,192.7 134.5,192.7 142.4,192.7 150.3,192.7 158.2,196.0 166.1,196.0 174.0,196.0 181.9,186.2 189.8,186.2 197.7,186.2 205.5,184.5 213.4,184.5 221.3,87.9 229.2,87.9 237.1,87.9 245.0,87.9 252.9,61.7 260.8,94.4 268.7,94.4 276.6,91.2 284.5,61.7 292.4,61.7 300.3,61.7 308.2,61.7 316.1,61.7 323.9,61.7 331.8,56.8 339.7,56.8 347.6,56.8 355.5,24.0 363.4,28.9 371.3,28.9 379.2,28.9 387.1,28.9 395.0,28.9 402.9,28.9 410.8,28.9 418.7,94.4 426.6,94.4 434.5,94.4 442.3,61.7 450.2,61.7 458.1,61.7 466.0,61.7 473.9,61.7 481.8,61.7 489.7,61.7 497.6,94.4 505.5,94.4 513.4,94.4 521.3,94.4 529.2,94.4 537.1,94.4 545.0,94.4 552.9,94.4 560.7,91.2 568.6,91.2 576.5,91.2 584.4,94.4 592.3,94.4 600.2,94.4 608.1,94.4 616.0,80.0" />
+      </svg>
+      <div class="chart-range">
+        <span>Min -35.5</span>
+        <span>Max -9.2</span>
+      </div>
+    </div>
+    
+        
+        <div class="chart-card">
+          <h3>Tomorrow Score</h3>
+          <p class="empty">Not enough data to draw this chart yet.</p>
+        </div>
+        
+      </div>
+    </section>
+
+    <section class="section charts">
+      <article class="notes">
+        <h3>Why this is different from wearables</h3>
+        <ul>
+          <li>Wearables mostly measure physiology. This project explains which behaviors likely caused the signal.</li>
+          <li>Wearables often focus on scores and passive monitoring. This system focuses on decisions and behavior changes.</li>
+          <li>Your wedge is contextual reasoning: sleep, caffeine, screens, stress, movement, and focus all live in one behavioral model.</li>
+        </ul>
+      </article>
+      <article class="notes">
+        <h3>Current recommendations</h3>
+        <ul>
+          <li>Your latest entry looks stable. Use consistency as the current performance strategy.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
