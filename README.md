@@ -81,30 +81,6 @@ The app now includes a feedback loop: after a prediction is made, you can return
 It also includes a daily alignment layer so users can define what matters each morning, choose three tiny steps, and reflect on what made them feel alive or drained.
 Sleep, caffeine timing, and light timing can be entered using normal clock times like `10:00 PM` or `6:30 AM` rather than decimal-hour math.
 
-## Make It Public
-
-Fastest public path:
-
-1. Push this project to GitHub.
-2. Create a Render web service from the repo.
-3. Use:
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `gunicorn app:app`
-4. Deploy and share the generated public URL.
-
-Important:
-
-- This repo includes `render.yaml` and `gunicorn` so it is ready for a basic Render deployment.
-- The current app uses `sleep_system.db` (SQLite). On many hosts, local filesystem storage is ephemeral unless you configure persistent storage.
-- For a real public beta, the next infrastructure upgrade should be Postgres.
-
-To generate the HTML dashboard:
-
-```bash
-python3 "Sleep System Dashboard.py"
-```
-
-Then open `dashboard.html` in your browser.
 
 ## Example questions this project answers
 
