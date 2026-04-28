@@ -282,6 +282,10 @@ button {
   padding-top: 0;
 }
 
+.coach-copy p + p {
+  margin-top: 12px;
+}
+
 .success-banner {
   margin-top: 18px;
   padding: 12px 14px;

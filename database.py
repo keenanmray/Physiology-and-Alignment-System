@@ -8,7 +8,7 @@ import sqlite3
 from typing import Any
 
 
-DB_PATH = "sleep_system.db"
+DB_PATH = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
 LEGACY_LOG_PATH = "log.json"
 
 
@@ -40,6 +40,8 @@ def init_db() -> None:
                 social_quality INTEGER,
                 north_star TEXT,
                 why_it_matters TEXT,
+                show_up_style TEXT,
+                gratitude_items TEXT,
                 priority_step TEXT,
                 tiny_steps TEXT,
                 latitude REAL,
@@ -59,6 +61,9 @@ def init_db() -> None:
                 ml_training_rows INTEGER,
                 ml_validation_rmse REAL,
                 ml_top_drivers TEXT,
+                ai_coach_summary TEXT,
+                ai_coach_model TEXT,
+                ai_coach_status TEXT,
                 actual_energy REAL,
                 actual_focus REAL,
                 actual_readiness REAL,
@@ -84,6 +89,8 @@ def init_db() -> None:
             ("insights", "TEXT"),
             ("north_star", "TEXT"),
             ("why_it_matters", "TEXT"),
+            ("show_up_style", "TEXT"),
+            ("gratitude_items", "TEXT"),
             ("priority_step", "TEXT"),
             ("tiny_steps", "TEXT"),
             ("latitude", "REAL"),
@@ -96,6 +103,9 @@ def init_db() -> None:
             ("ml_training_rows", "INTEGER"),
             ("ml_validation_rmse", "REAL"),
             ("ml_top_drivers", "TEXT"),
+            ("ai_coach_summary", "TEXT"),
+            ("ai_coach_model", "TEXT"),
+            ("ai_coach_status", "TEXT"),
             ("actual_energy", "REAL"),
             ("actual_focus", "REAL"),
             ("actual_readiness", "REAL"),
@@ -114,7 +124,7 @@ def init_db() -> None:
 
 def row_to_entry(row: sqlite3.Row) -> dict[str, Any]:
     entry = dict(row)
-    for key in ("caffeine_events", "light", "recommendations", "insights", "behavior_flags", "ml_top_drivers", "tiny_steps"):
+    for key in ("caffeine_events", "light", "recommendations", "insights", "behavior_flags", "ml_top_drivers", "tiny_steps", "gratitude_items"):
         raw = entry.get(key)
         entry[key] = json.loads(raw) if raw else []
     return entry
@@ -199,6 +209,8 @@ def insert_entry(entry: dict[str, Any]) -> int:
         "social_quality": entry.get("social_quality"),
         "north_star": entry.get("north_star"),
         "why_it_matters": entry.get("why_it_matters"),
+        "show_up_style": entry.get("show_up_style"),
+        "gratitude_items": json.dumps(entry.get("gratitude_items", [])),
         "priority_step": entry.get("priority_step"),
         "tiny_steps": json.dumps(entry.get("tiny_steps", [])),
         "latitude": entry.get("latitude"),
@@ -218,6 +230,9 @@ def insert_entry(entry: dict[str, Any]) -> int:
         "ml_training_rows": entry.get("ml_training_rows"),
         "ml_validation_rmse": entry.get("ml_validation_rmse"),
         "ml_top_drivers": json.dumps(entry.get("ml_top_drivers", [])),
+        "ai_coach_summary": entry.get("ai_coach_summary"),
+        "ai_coach_model": entry.get("ai_coach_model"),
+        "ai_coach_status": entry.get("ai_coach_status"),
         "actual_energy": entry.get("actual_energy"),
         "actual_focus": entry.get("actual_focus"),
         "actual_readiness": entry.get("actual_readiness"),
@@ -238,11 +253,12 @@ def insert_entry(entry: dict[str, Any]) -> int:
             INSERT INTO daily_entries (
                 date, sleep_start, sleep_end, sleep_hours, sleep_quality, training, caffeine,
                 caffeine_events, light, focus_minutes, stress, screen_minutes,
-                movement_minutes, social_quality, north_star, why_it_matters, priority_step,
-                tiny_steps, latitude, longitude, sunrise_local,
+                movement_minutes, social_quality, north_star, why_it_matters, show_up_style, gratitude_items,
+                priority_step, tiny_steps, latitude, longitude, sunrise_local,
                 sunset_local, morning_light_window, evening_dim_window, energy, recovery, sleep_debt,
                 circadian_shift, circadian_status, performance_score, tomorrow_score,
                 ml_prediction, ml_training_rows, ml_validation_rmse, ml_top_drivers,
+                ai_coach_summary, ai_coach_model, ai_coach_status,
                 actual_energy, actual_focus, actual_readiness, alive_moment, drained_moment,
                 alignment_score, evening_lesson, feedback_notes, feedback_at,
                 recommendations, insights,
@@ -250,11 +266,12 @@ def insert_entry(entry: dict[str, Any]) -> int:
             ) VALUES (
                 :date, :sleep_start, :sleep_end, :sleep_hours, :sleep_quality, :training, :caffeine,
                 :caffeine_events, :light, :focus_minutes, :stress, :screen_minutes,
-                :movement_minutes, :social_quality, :north_star, :why_it_matters, :priority_step,
-                :tiny_steps, :latitude, :longitude, :sunrise_local,
+                :movement_minutes, :social_quality, :north_star, :why_it_matters, :show_up_style, :gratitude_items,
+                :priority_step, :tiny_steps, :latitude, :longitude, :sunrise_local,
                 :sunset_local, :morning_light_window, :evening_dim_window, :energy, :recovery, :sleep_debt,
                 :circadian_shift, :circadian_status, :performance_score, :tomorrow_score,
                 :ml_prediction, :ml_training_rows, :ml_validation_rmse, :ml_top_drivers,
+                :ai_coach_summary, :ai_coach_model, :ai_coach_status,
                 :actual_energy, :actual_focus, :actual_readiness, :alive_moment, :drained_moment,
                 :alignment_score, :evening_lesson, :feedback_notes, :feedback_at,
                 :recommendations, :insights,

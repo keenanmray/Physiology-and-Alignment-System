@@ -16,64 +16,16 @@
     <section class="hero">
       <div>
         <p class="eyebrow">Sleep System</p>
-        <h1>Behavioral Performance Engine</h1>
+        <h1>Simple daily alignment and physiology tracking.</h1>
         <p class="lede">
-          This app turns daily choices into recovery, circadian, and next-day readiness insight.
-          The key product idea is simple: explain what likely drove your score and what to change next.
+          Put in your intentions. Put in your daily physiology. Get a clear score out of 100,
+          a simple explanation of what it means, and a few recommendations to improve tomorrow.
         </p>
       </div>
       <div class="hero-card">
-        <h2>Why this structure matters</h2>
-        <p>
-          I split the health model into a reusable engine and kept the web layer thin. That means the same
-          physiology logic can power the CLI, the dashboard, and this app without being rewritten.
-        </p>
+        <h2>How to use it</h2>
+        <p>1. Set your intention. 2. Log the main inputs from your day. 3. Read your score and follow the top recommendations.</p>
       </div>
-    </section>
-
-    <section class="trend-grid">
-      {% for card in trend_cards %}
-        <article class="panel trend-card">
-          <div class="trend-head">
-            <h3>{{ card.title }}</h3>
-            <span>{{ card.latest if card.latest is not none else "N/A" }}</span>
-          </div>
-          {% if card.points %}
-            <svg viewBox="0 0 360 120" role="img" aria-label="{{ card.title }} trend">
-              <polyline fill="none" stroke="{{ card.stroke }}" stroke-width="4" points="{{ card.points }}"></polyline>
-            </svg>
-          {% else %}
-            <p class="muted">Not enough data yet to draw a trend.</p>
-          {% endif %}
-        </article>
-      {% endfor %}
-    </section>
-
-    <section class="stats">
-      <article class="stat">
-        <span>Tracked Days</span>
-        <strong>{{ metrics.tracked_days }}</strong>
-      </article>
-      <article class="stat">
-        <span>Latest Date</span>
-        <strong>{{ metrics.latest_date }}</strong>
-      </article>
-      <article class="stat">
-        <span>Latest Score</span>
-        <strong>{{ metrics.latest_score if metrics.latest_score is not none else "N/A" }}</strong>
-      </article>
-      <article class="stat">
-        <span>7-Day Avg</span>
-        <strong>{{ metrics.average_score if metrics.average_score is not none else "N/A" }}</strong>
-      </article>
-      <article class="stat">
-        <span>Feedback Entries</span>
-        <strong>{{ feedback_summary.feedback_count }}</strong>
-      </article>
-      <article class="stat">
-        <span>Alignment Reflections</span>
-        <strong>{{ alignment_summary.alignment_count }}</strong>
-      </article>
     </section>
 
     <section class="layout">
@@ -97,6 +49,22 @@
             <label class="wide">
               <span>Why It Matters</span>
               <input name="why_it_matters" value="{{ form_data.why_it_matters }}" placeholder="Why does this actually matter to me?">
+            </label>
+            <label class="wide">
+              <span>How I Choose to Show Up</span>
+              <input name="show_up_style" value="{{ form_data.show_up_style }}" placeholder="Present and warm, kind and generous, grounded, steady, calm, confident...">
+            </label>
+            <label>
+              <span>Grateful For 1</span>
+              <input name="gratitude_1" value="{{ form_data.gratitude_1 }}" placeholder="A person, moment, opportunity...">
+            </label>
+            <label>
+              <span>Grateful For 2</span>
+              <input name="gratitude_2" value="{{ form_data.gratitude_2 }}">
+            </label>
+            <label>
+              <span>Grateful For 3</span>
+              <input name="gratitude_3" value="{{ form_data.gratitude_3 }}">
             </label>
             <label>
               <span>Tiny Step 1</span>
@@ -192,8 +160,8 @@
 
       <section class="panel results-panel">
         <div class="panel-head">
-          <h2>Decision Output</h2>
-          <p>This is the product difference: not just a score, but an explanation and next action.</p>
+          <h2>Your Daily Readout</h2>
+          <p>One simple score, a plain-English explanation, and the next actions that matter most.</p>
         </div>
 
         {% if result %}
@@ -202,25 +170,24 @@
           </div>
           <div class="score-grid">
             <article class="score-card">
-              <span>Performance Score</span>
-              <strong>{{ result.performance_score }}</strong>
-            </article>
-            <article class="score-card">
-              <span>Tomorrow Score</span>
-              <strong>{{ result.tomorrow_score }}</strong>
-            </article>
-            <article class="score-card">
-              <span>ML Readiness Score</span>
-              <strong>{{ result.ml_prediction if result.ml_prediction is not none else "N/A" }}</strong>
+              <span>Performance</span>
+              <strong>{{ result_view.performance }}/100</strong>
             </article>
             <article class="score-card">
               <span>Recovery</span>
-              <strong>{{ result.recovery }}</strong>
+              <strong>{{ result_view.recovery }}/100</strong>
             </article>
             <article class="score-card">
-              <span>Circadian</span>
-              <strong>{{ result.circadian_status }}</strong>
+              <span>Tomorrow</span>
+              <strong>{{ result_view.tomorrow }}/100</strong>
             </article>
+          </div>
+
+          <div class="detail-block">
+            <h3>{{ result_view.score_title }}</h3>
+            <p>{{ result_view.score_message }}</p>
+            <p class="muted">{{ result_view.main_insight }}</p>
+            <p class="muted">{{ result_view.circadian_message }}</p>
           </div>
 
           {% if result.sunrise_local or result.sunset_local %}
@@ -244,18 +211,18 @@
           {% endif %}
 
           <div class="detail-block">
-            <h3>Daily Insights</h3>
+            <h3>Top Recommendations</h3>
             <ul>
-              {% for item in result.insights %}
+              {% for item in result.recommendations %}
                 <li>{{ item }}</li>
               {% endfor %}
             </ul>
           </div>
 
           <div class="detail-block">
-            <h3>Top Recommendations</h3>
+            <h3>What the system noticed</h3>
             <ul>
-              {% for item in result.recommendations %}
+              {% for item in result.insights %}
                 <li>{{ item }}</li>
               {% endfor %}
             </ul>
@@ -271,6 +238,12 @@
                 {% if result.why_it_matters %}
                   <li>Why it matters: {{ result.why_it_matters }}</li>
                 {% endif %}
+                {% if result.show_up_style %}
+                  <li>How you chose to show up: {{ result.show_up_style }}</li>
+                {% endif %}
+                {% for item in result.gratitude_items %}
+                  <li>Grateful for: {{ item }}</li>
+                {% endfor %}
                 {% if result.priority_step %}
                   <li>Priority step: {{ result.priority_step }}</li>
                 {% endif %}
@@ -282,7 +255,7 @@
           {% endif %}
 
           <div class="detail-block">
-            <h3>Delta vs Previous Log</h3>
+            <h3>Compared with your last log</h3>
             <ul>
               {% for item in deltas %}
                 <li>{{ item }}</li>
@@ -290,75 +263,29 @@
             </ul>
           </div>
 
-          {% if result.ml_prediction is not none %}
-            <div class="detail-block">
-              <h3>ML Readout</h3>
-              <ul>
-                <li>ML predicted readiness score: {{ result.ml_prediction }}</li>
-                {% if result.ml_training_rows %}
-                  <li>Model trained on {{ result.ml_training_rows }} prior entries.</li>
-                {% endif %}
-                {% if result.ml_validation_rmse is not none %}
-                  <li>Validation RMSE: {{ result.ml_validation_rmse }}</li>
-                {% endif %}
-                {% for item in result.ml_top_drivers %}
-                  <li>{{ item }}</li>
+          <div class="detail-block">
+            <h3>AI Coach Summary</h3>
+            {% if result.ai_coach_summary %}
+              <div class="coach-copy">
+                {% for paragraph in result.ai_coach_summary.split('\n') %}
+                  {% if paragraph.strip() %}
+                    <p>{{ paragraph }}</p>
+                  {% endif %}
                 {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
+              </div>
+              {% if result.ai_coach_model %}
+                <p class="muted">Generated with {{ result.ai_coach_model }}.</p>
+              {% endif %}
+            {% elif result.ai_coach_status %}
+              <p class="muted">{{ result.ai_coach_status }}</p>
+            {% else %}
+              <p class="muted">No AI coach summary yet.</p>
+            {% endif %}
+          </div>
         {% else %}
           <div class="empty-state">
             <h3>No analysis yet</h3>
-            <p>Submit a daily entry and the app will score recovery, project tomorrow, and generate behavior recommendations.</p>
-          </div>
-        {% endif %}
-
-        <div class="detail-block">
-          <h3>Weekly Pattern Read</h3>
-          <ul>
-            {% for item in weekly %}
-              <li>{{ item }}</li>
-            {% endfor %}
-          </ul>
-        </div>
-
-        {% if ml_model %}
-          <div class="detail-block">
-            <h3>Model Status</h3>
-            <ul>
-              <li>ML model active with {{ ml_model.training_rows }} training rows.</li>
-              {% if ml_model.validation_rmse is not none %}
-                <li>Latest validation RMSE: {{ ml_model.validation_rmse }}</li>
-              {% endif %}
-            </ul>
-          </div>
-        {% endif %}
-
-        {% if feedback_summary.feedback_count %}
-          <div class="detail-block">
-            <h3>Feedback Loop</h3>
-            <ul>
-              <li>{{ feedback_summary.feedback_count }} entries now include actual next-day outcomes.</li>
-              {% if feedback_summary.rule_mae is not none %}
-                <li>Rule-based MAE vs actual readiness: {{ feedback_summary.rule_mae }}</li>
-              {% endif %}
-              {% if feedback_summary.ml_mae is not none %}
-                <li>ML MAE vs actual readiness: {{ feedback_summary.ml_mae }}</li>
-              {% endif %}
-            </ul>
-          </div>
-        {% endif %}
-
-        {% if alignment_summary.alignment_count %}
-          <div class="detail-block">
-            <h3>Meaning Alignment</h3>
-            <ul>
-              <li>{{ alignment_summary.alignment_count }} entries include evening reflection.</li>
-              {% if alignment_summary.average_alignment is not none %}
-                <li>Average alignment score: {{ alignment_summary.average_alignment }}</li>
-              {% endif %}
-            </ul>
+            <p>Submit a daily entry and the app will turn your intentions and physiology into a score, an explanation, and recommendations.</p>
           </div>
         {% endif %}
       </section>

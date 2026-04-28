@@ -62,6 +62,8 @@ class DayInput:
     social_quality: int = 3
     north_star: str | None = None
     why_it_matters: str | None = None
+    show_up_style: str | None = None
+    gratitude_items: list[str] = field(default_factory=list)
     priority_step: str | None = None
     tiny_steps: list[str] = field(default_factory=list)
     latitude: float | None = None
@@ -127,6 +129,8 @@ class DailyResult:
             "social_quality": day.social_quality,
             "north_star": day.north_star,
             "why_it_matters": day.why_it_matters,
+            "show_up_style": day.show_up_style,
+            "gratitude_items": day.gratitude_items,
             "priority_step": day.priority_step,
             "tiny_steps": day.tiny_steps,
             "latitude": day.latitude,

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+import os
 
 from flask import Flask, redirect, render_template, request, url_for
 
+from ai_coach import generate_ai_coach_summary
 from database import (
     ensure_seed_data,
     get_entry,
@@ -14,7 +16,7 @@ from database import (
     list_entries,
     update_feedback,
 )
-from history_helpers import alignment_metrics, feedback_metrics, numeric_series, sleep_series, sparkline_points, summary_metrics
+from history_helpers import summary_metrics
 from ml_model import train_tomorrow_model
 from solar_service import fetch_solar_context
 
@@ -47,6 +49,10 @@ DEFAULT_FORM = {
     "social_quality": "4",
     "north_star": "",
     "why_it_matters": "",
+    "show_up_style": "",
+    "gratitude_1": "",
+    "gratitude_2": "",
+    "gratitude_3": "",
     "tiny_step_1": "",
     "tiny_step_2": "",
     "tiny_step_3": "",
@@ -150,6 +156,14 @@ def build_day_input() -> DayInput:
         social_quality=parse_int("social_quality", 4),
         north_star=request.form.get("north_star", "").strip() or None,
         why_it_matters=request.form.get("why_it_matters", "").strip() or None,
+        show_up_style=request.form.get("show_up_style", "").strip() or None,
+        gratitude_items=[
+            item for item in [
+                request.form.get("gratitude_1", "").strip(),
+                request.form.get("gratitude_2", "").strip(),
+                request.form.get("gratitude_3", "").strip(),
+            ] if item
+        ],
         priority_step=request.form.get("priority_step", "").strip() or None,
         tiny_steps=[
             step for step in [
@@ -191,27 +205,49 @@ def compare_saved_entry(entry: dict | None, previous: dict | None) -> list[str]:
     return deltas[:2] or ["Previous day exists, but there was not a meaningful performance change."]
 
 
-def build_trend_cards(entries: list[dict]) -> list[dict]:
-    return [
-        {
-            "title": "Performance Score",
-            "latest": entries[-1].get("performance_score") if entries else None,
-            "points": sparkline_points(numeric_series(entries, "performance_score")),
-            "stroke": "var(--accent)",
-        },
-        {
-            "title": "Tomorrow Score",
-            "latest": entries[-1].get("tomorrow_score") if entries else None,
-            "points": sparkline_points(numeric_series(entries, "tomorrow_score")),
-            "stroke": "var(--accent-3)",
-        },
-        {
-            "title": "Sleep Hours",
-            "latest": entries[-1].get("sleep_hours") if entries else None,
-            "points": sparkline_points(sleep_series(entries)),
-            "stroke": "var(--accent-2)",
-        },
-    ]
+def score_out_of_100(value: object) -> int | None:
+    if isinstance(value, (int, float)):
+        return max(0, min(100, int(round(float(value)))))
+    return None
+
+
+def performance_band(score: int | None) -> tuple[str, str]:
+    if score is None:
+        return ("No score yet", "Log a day to generate a score and guidance.")
+    if score >= 85:
+        return ("Strong day", "Your current inputs are supporting strong energy, focus, and recovery.")
+    if score >= 70:
+        return ("Solid day", "You are in a good place, and a few small adjustments could raise the ceiling.")
+    if score >= 55:
+        return ("Mixed day", "Some inputs are helping, but recovery or alignment needs tightening.")
+    return ("Recovery day", "Your body and routine are asking for simpler, more restorative choices today.")
+
+
+def circadian_copy(status: str | None) -> str:
+    if status == "advanced":
+        return "Your body clock is shifting earlier."
+    if status == "delayed":
+        return "Your body clock is drifting later."
+    return "Your body clock looks reasonably aligned."
+
+
+def build_result_view(entry: dict | None) -> dict | None:
+    if not entry:
+        return None
+    performance = score_out_of_100(entry.get("performance_score"))
+    recovery = score_out_of_100(entry.get("recovery"))
+    tomorrow = score_out_of_100(entry.get("tomorrow_score"))
+    title, message = performance_band(performance)
+    insights = entry.get("insights") or []
+    return {
+        "performance": performance,
+        "recovery": recovery,
+        "tomorrow": tomorrow,
+        "score_title": title,
+        "score_message": message,
+        "main_insight": insights[0] if insights else "Keep logging a few days so the system can learn your patterns.",
+        "circadian_message": circadian_copy(entry.get("circadian_status")),
+    }
 
 
 def enrich_with_ml(entry: dict, model) -> dict:
@@ -234,12 +270,9 @@ def index():
     entries = list_entries()
     ml_model = train_tomorrow_model(entries)
     metrics = summary_metrics(entries)
-    feedback_summary = feedback_metrics(entries)
-    alignment_summary = alignment_metrics(entries)
     result = None
+    result_view = None
     deltas = []
-    weekly = weekly_insights(entries)
-    trend_cards = build_trend_cards(entries[-14:])
     form_data = DEFAULT_FORM.copy()
     saved_entry_id = request.args.get("saved", type=int)
 
@@ -249,24 +282,22 @@ def index():
         engine = SleepSystemEngine(Person(name="Keenan"))
         result = engine.run_day(day)
         entry_payload = enrich_with_ml(result.to_log_dict(day), ml_model)
+        entry_payload.update(generate_ai_coach_summary(entry_payload))
         entry_id = insert_entry(entry_payload)
         return redirect(url_for("index", saved=entry_id))
 
     if saved_entry_id:
         result = get_entry(saved_entry_id)
+        result_view = build_result_view(result)
         deltas = compare_saved_entry(result, get_previous_entry(saved_entry_id))
 
     return render_template(
         "index.html",
         form_data=form_data,
         result=result,
+        result_view=result_view,
         deltas=deltas,
-        weekly=weekly,
         metrics=metrics,
-        feedback_summary=feedback_summary,
-        alignment_summary=alignment_summary,
-        trend_cards=trend_cards,
-        ml_model=ml_model,
         active_page="dashboard",
     )
 
@@ -280,10 +311,6 @@ def history():
         "history.html",
         entries=history_entries,
         metrics=metrics,
-        feedback_summary=feedback_metrics(entries),
-        alignment_summary=alignment_metrics(entries),
-        trend_cards=build_trend_cards(entries[-30:]),
-        ml_model=train_tomorrow_model(entries),
         active_page="history",
     )
 
@@ -317,5 +344,7 @@ def feedback(entry_id: int):
 
 
 if __name__ == "__main__":
-    print("Sleep System running at http://127.0.0.1:8000")
-    app.run(host="127.0.0.1", port=8000, debug=False)
+    port = int(os.getenv("PORT", "8000"))
+    host = os.getenv("HOST", "127.0.0.1")
+    print(f"Sleep System running at http://{host}:{port}")
+    app.run(host=host, port=port, debug=False)

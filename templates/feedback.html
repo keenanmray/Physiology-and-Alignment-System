@@ -29,6 +29,12 @@
         {% if entry.north_star %}
           <p>Morning North Star: {{ entry.north_star }}</p>
         {% endif %}
+        {% if entry.show_up_style %}
+          <p>Chosen presence: {{ entry.show_up_style }}</p>
+        {% endif %}
+        {% if entry.gratitude_items %}
+          <p>Morning gratitude: {{ entry.gratitude_items | join(", ") }}</p>
+        {% endif %}
       </div>
     </section>
 
