@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from datetime import date, datetime
 import os
+import traceback
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from ai_coach import generate_ai_coach_summary
 from database import (
     ensure_seed_data,
     get_entry,
@@ -17,8 +17,41 @@ from database import (
     update_feedback,
 )
 from history_helpers import summary_metrics
-from ml_model import train_tomorrow_model
-from solar_service import fetch_solar_context
+
+try:
+    from ai_coach import generate_ai_coach_summary
+except Exception as exc:  # pragma: no cover - startup safety for deployment
+    print(f"AI coach import disabled: {exc}")
+
+    def generate_ai_coach_summary(entry: dict) -> dict:
+        return {
+            "ai_coach_summary": None,
+            "ai_coach_model": None,
+            "ai_coach_status": "disabled",
+        }
+
+try:
+    from ml_model import train_tomorrow_model
+except Exception as exc:  # pragma: no cover - startup safety for deployment
+    print(f"ML import disabled: {exc}")
+
+    def train_tomorrow_model(entries: list[dict]):
+        return None
+
+try:
+    from solar_service import fetch_solar_context
+except Exception as exc:  # pragma: no cover - startup safety for deployment
+    print(f"Solar import disabled: {exc}")
+
+    def fetch_solar_context(latitude: float, longitude: float, day_date: str, timezone_name: str) -> dict:
+        return {
+            "latitude": latitude,
+            "longitude": longitude,
+            "sunrise_local": None,
+            "sunset_local": None,
+            "morning_light_window": None,
+            "evening_dim_window": None,
+        }
 
 from sleep_engine import (
     DayInput,
@@ -30,7 +63,11 @@ from sleep_engine import (
 
 
 app = Flask(__name__)
-ensure_seed_data()
+try:
+    ensure_seed_data()
+except Exception as exc:  # pragma: no cover - startup safety for deployment
+    print(f"Database seed failed: {exc}")
+    traceback.print_exc()
 
 
 DEFAULT_FORM = {
