@@ -1,12 +1,12 @@
 :root {
-  --paper: #f5efe4;
-  --panel: #fffaf2;
-  --ink: #1d1c18;
-  --muted: #655f54;
-  --line: #d9cebb;
-  --accent: #0d6b50;
-  --accent-2: #c16e14;
-  --accent-3: #234e70;
+  --paper: #f7f1e7;
+  --panel: #fffaf4;
+  --ink: #1f1d19;
+  --muted: #6a6459;
+  --line: #dfd2c0;
+  --accent: #2f6c57;
+  --accent-2: #c77f2b;
+  --accent-3: #7a5538;
 }
 
 * {
@@ -18,8 +18,8 @@ body {
   font-family: Georgia, "Times New Roman", serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(193, 110, 20, 0.18), transparent 26%),
-    radial-gradient(circle at right center, rgba(35, 78, 112, 0.14), transparent 24%),
+    radial-gradient(circle at top left, rgba(199, 127, 43, 0.16), transparent 28%),
+    radial-gradient(circle at right center, rgba(47, 108, 87, 0.12), transparent 26%),
     var(--paper);
 }
 

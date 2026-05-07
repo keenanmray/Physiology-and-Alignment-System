@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import ssl
 from typing import Any
 from urllib import error, request
 
@@ -21,6 +22,7 @@ def build_coach_prompt(entry: dict[str, Any]) -> str:
     tiny_steps = entry.get("tiny_steps") or []
     gratitude_items = entry.get("gratitude_items") or []
     recommendations = entry.get("recommendations") or []
+    action_steps = entry.get("action_steps") or []
     insights = entry.get("insights") or []
 
     parts = [
@@ -49,10 +51,33 @@ def build_coach_prompt(entry: dict[str, Any]) -> str:
         f"Morning gratitude: {', '.join(gratitude_items) if gratitude_items else 'Not provided'}",
         f"Priority step: {entry.get('priority_step') or 'Not provided'}",
         f"Tiny steps: {', '.join(tiny_steps) if tiny_steps else 'None provided'}",
+        f"Grounded action steps: {' | '.join(action_steps) if action_steps else 'None'}",
         f"Rules-based insights: {' | '.join(insights) if insights else 'None'}",
         f"Rules-based recommendations: {' | '.join(recommendations) if recommendations else 'None'}",
     ]
     return "\n".join(parts)
+
+
+def request_via_http(entry: dict[str, Any], api_key: str, model: str) -> str | None:
+    payload = {
+        "model": model,
+        "instructions": "You are a thoughtful AI health and performance coach inside a web application.",
+        "input": build_coach_prompt(entry),
+    }
+    req = request.Request(
+        API_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    allow_insecure = os.getenv("OPENAI_ALLOW_INSECURE_SSL") == "1"
+    context = ssl._create_unverified_context() if allow_insecure else None
+    with request.urlopen(req, timeout=20, context=context) as http_response:
+        data = json.loads(http_response.read().decode("utf-8"))
+    return data.get("output_text")
 
 
 def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
@@ -76,23 +101,20 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
             )
             summary = response.output_text
         else:
-            payload = {
-                "model": model,
-                "instructions": "You are a thoughtful AI health and performance coach inside a web application.",
-                "input": build_coach_prompt(entry),
+            summary = request_via_http(entry, api_key, model)
+    except ssl.SSLError:
+        try:
+            summary = request_via_http(entry, api_key, model)
+        except Exception as exc:
+            return {
+                "ai_coach_summary": None,
+                "ai_coach_model": model,
+                "ai_coach_status": (
+                    "AI coach hit a local SSL certificate problem. "
+                    "Set OPENAI_ALLOW_INSECURE_SSL=1 to test locally, or fix your Python certificates. "
+                    f"Details: {exc}"
+                ),
             }
-            req = request.Request(
-                API_URL,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                method="POST",
-            )
-            with request.urlopen(req, timeout=20) as http_response:
-                data = json.loads(http_response.read().decode("utf-8"))
-            summary = data.get("output_text")
     except error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="ignore")
         return {

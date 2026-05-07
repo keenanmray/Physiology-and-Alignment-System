@@ -61,6 +61,7 @@ def init_db() -> None:
                 ml_training_rows INTEGER,
                 ml_validation_rmse REAL,
                 ml_top_drivers TEXT,
+                action_steps TEXT,
                 ai_coach_summary TEXT,
                 ai_coach_model TEXT,
                 ai_coach_status TEXT,
@@ -103,6 +104,7 @@ def init_db() -> None:
             ("ml_training_rows", "INTEGER"),
             ("ml_validation_rmse", "REAL"),
             ("ml_top_drivers", "TEXT"),
+            ("action_steps", "TEXT"),
             ("ai_coach_summary", "TEXT"),
             ("ai_coach_model", "TEXT"),
             ("ai_coach_status", "TEXT"),
@@ -124,7 +126,7 @@ def init_db() -> None:
 
 def row_to_entry(row: sqlite3.Row) -> dict[str, Any]:
     entry = dict(row)
-    for key in ("caffeine_events", "light", "recommendations", "insights", "behavior_flags", "ml_top_drivers", "tiny_steps", "gratitude_items"):
+    for key in ("caffeine_events", "light", "recommendations", "action_steps", "insights", "behavior_flags", "ml_top_drivers", "tiny_steps", "gratitude_items"):
         raw = entry.get(key)
         entry[key] = json.loads(raw) if raw else []
     return entry
@@ -230,6 +232,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
         "ml_training_rows": entry.get("ml_training_rows"),
         "ml_validation_rmse": entry.get("ml_validation_rmse"),
         "ml_top_drivers": json.dumps(entry.get("ml_top_drivers", [])),
+        "action_steps": json.dumps(entry.get("action_steps", [])),
         "ai_coach_summary": entry.get("ai_coach_summary"),
         "ai_coach_model": entry.get("ai_coach_model"),
         "ai_coach_status": entry.get("ai_coach_status"),
@@ -258,6 +261,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
                 sunset_local, morning_light_window, evening_dim_window, energy, recovery, sleep_debt,
                 circadian_shift, circadian_status, performance_score, tomorrow_score,
                 ml_prediction, ml_training_rows, ml_validation_rmse, ml_top_drivers,
+                action_steps,
                 ai_coach_summary, ai_coach_model, ai_coach_status,
                 actual_energy, actual_focus, actual_readiness, alive_moment, drained_moment,
                 alignment_score, evening_lesson, feedback_notes, feedback_at,
@@ -271,6 +275,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
                 :sunset_local, :morning_light_window, :evening_dim_window, :energy, :recovery, :sleep_debt,
                 :circadian_shift, :circadian_status, :performance_score, :tomorrow_score,
                 :ml_prediction, :ml_training_rows, :ml_validation_rmse, :ml_top_drivers,
+                :action_steps,
                 :ai_coach_summary, :ai_coach_model, :ai_coach_status,
                 :actual_energy, :actual_focus, :actual_readiness, :alive_moment, :drained_moment,
                 :alignment_score, :evening_lesson, :feedback_notes, :feedback_at,

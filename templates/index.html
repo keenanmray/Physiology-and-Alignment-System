@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sleep System</title>
+  <title>Becoming</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -15,16 +15,16 @@
 
     <section class="hero">
       <div>
-        <p class="eyebrow">Sleep System</p>
-        <h1>Simple daily alignment and physiology tracking.</h1>
+        <p class="eyebrow">Becoming Beta</p>
+        <h1>Become more aligned, energized, and intentional each day.</h1>
         <p class="lede">
-          Put in your intentions. Put in your daily physiology. Get a clear score out of 100,
-          a simple explanation of what it means, and a few recommendations to improve tomorrow.
+          Becoming helps you connect who you want to be with how you actually live.
+          Set your intention, log your physiology, and get a clear score with grounded next steps.
         </p>
       </div>
       <div class="hero-card">
-        <h2>How to use it</h2>
-        <p>1. Set your intention. 2. Log the main inputs from your day. 3. Read your score and follow the top recommendations.</p>
+        <h2>What it does</h2>
+        <p>It turns daily intention and physiology into a simple readout and 3 actionable steps that help you move toward the person you want to become.</p>
       </div>
     </section>
 
@@ -32,7 +32,7 @@
       <form class="panel form-panel" method="post">
         <div class="panel-head">
           <h2>Morning Setup</h2>
-          <p>Start the day by naming what matters, then log the key behaviors that will shape energy, circadian rhythm, and tomorrow's readiness.</p>
+          <p>Begin with identity and direction, then log the physical signals that shape your energy, performance, and consistency.</p>
         </div>
 
         <section class="ritual-block morning-block">
@@ -161,7 +161,7 @@
       <section class="panel results-panel">
         <div class="panel-head">
           <h2>Your Daily Readout</h2>
-          <p>One simple score, a plain-English explanation, and the next actions that matter most.</p>
+          <p>One clear score, a simple interpretation, and the next actions that matter most today.</p>
         </div>
 
         {% if result %}
@@ -189,6 +189,17 @@
             <p class="muted">{{ result_view.main_insight }}</p>
             <p class="muted">{{ result_view.circadian_message }}</p>
           </div>
+
+          {% if result.action_steps %}
+            <div class="detail-block">
+              <h3>Your 3 Next Steps</h3>
+              <ul>
+                {% for item in result.action_steps %}
+                  <li>{{ item }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
 
           {% if result.sunrise_local or result.sunset_local %}
             <div class="detail-block">
@@ -263,29 +274,10 @@
             </ul>
           </div>
 
-          <div class="detail-block">
-            <h3>AI Coach Summary</h3>
-            {% if result.ai_coach_summary %}
-              <div class="coach-copy">
-                {% for paragraph in result.ai_coach_summary.split('\n') %}
-                  {% if paragraph.strip() %}
-                    <p>{{ paragraph }}</p>
-                  {% endif %}
-                {% endfor %}
-              </div>
-              {% if result.ai_coach_model %}
-                <p class="muted">Generated with {{ result.ai_coach_model }}.</p>
-              {% endif %}
-            {% elif result.ai_coach_status %}
-              <p class="muted">{{ result.ai_coach_status }}</p>
-            {% else %}
-              <p class="muted">No AI coach summary yet.</p>
-            {% endif %}
-          </div>
         {% else %}
           <div class="empty-state">
             <h3>No analysis yet</h3>
-            <p>Submit a daily entry and the app will turn your intentions and physiology into a score, an explanation, and recommendations.</p>
+            <p>Submit a daily entry and Becoming will turn your intentions and physiology into a score, an explanation, and 3 grounded next steps.</p>
           </div>
         {% endif %}
       </section>

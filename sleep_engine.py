@@ -108,6 +108,7 @@ class DailyResult:
     performance_score: float
     tomorrow_score: float
     recommendations: list[str]
+    action_steps: list[str]
     insights: list[str]
     behavior_flags: list[str]
 
@@ -147,6 +148,7 @@ class DailyResult:
             "performance_score": self.performance_score,
             "tomorrow_score": self.tomorrow_score,
             "recommendations": self.recommendations,
+            "action_steps": self.action_steps,
             "insights": self.insights,
             "behavior_flags": self.behavior_flags,
         }
@@ -196,6 +198,7 @@ class SleepSystemEngine:
         tomorrow_score = self._tomorrow_score(day, person, sleep_hours)
         behavior_flags = self._behavior_flags(day, sleep_hours)
         recommendations = self._recommendations(day, person, sleep_hours, behavior_flags)
+        action_steps = self._action_steps(day, person, sleep_hours, behavior_flags)
         insights = [
             self._primary_insight(day, person, sleep_hours, performance_score),
             self._circadian_insight(person),
@@ -214,6 +217,7 @@ class SleepSystemEngine:
             performance_score=performance_score,
             tomorrow_score=tomorrow_score,
             recommendations=recommendations,
+            action_steps=action_steps,
             insights=insights,
             behavior_flags=behavior_flags,
         )
@@ -287,6 +291,42 @@ class SleepSystemEngine:
         if not recs:
             recs.append("Keep the current routine steady; today's inputs support a strong tomorrow.")
         return recs[:3]
+
+    @staticmethod
+    def _action_steps(
+        day: DayInput,
+        person: Person,
+        sleep_hours: float,
+        behavior_flags: list[str],
+    ) -> list[str]:
+        steps = []
+
+        if day.priority_step:
+            steps.append(f"Block 25 focused minutes for '{day.priority_step}' before noon and finish one visible piece of it.")
+        elif day.tiny_steps:
+            steps.append(f"Start with this first small win: {day.tiny_steps[0]}.")
+        elif day.north_star:
+            steps.append(f"Write one sentence defining the next concrete move toward: {day.north_star}.")
+
+        if sleep_hours < 8:
+            steps.append("Protect tonight now: pick a target bedtime and set a 30-minute wind-down alarm.")
+        elif "late_caffeine" in behavior_flags:
+            steps.append("Cut off caffeine earlier tomorrow so your energy does not steal from tomorrow night.")
+        elif day.stress >= 3:
+            steps.append("Take a 10-minute recovery block today: walk, breathe, stretch, and come back steadier.")
+        elif day.morning_light_window:
+            steps.append(f"Get outside during {day.morning_light_window} to anchor your body clock.")
+        else:
+            steps.append("Keep your physiology steady today: move your body, eat on time, and protect evening light.")
+
+        if day.show_up_style:
+            steps.append(f"Before your first important interaction, pause for 30 seconds and choose to show up as: {day.show_up_style}.")
+        elif day.gratitude_items:
+            steps.append(f"Act on one gratitude item today. Let '{day.gratitude_items[0]}' shape one choice or conversation.")
+        else:
+            steps.append("Choose one moment today to slow down and act like the person you say you want to become.")
+
+        return steps[:3]
 
     @staticmethod
     def _primary_insight(

@@ -46,6 +46,8 @@ python3 app.py
 Then open `http://127.0.0.1:8000`.
 
 The web app uses `sleep_system.db` as its main data store. On first run, it seeds the database from `log.json` so older entries still appear in the history view.
+It supports automatic sunrise/sunset timing based on latitude and longitude entered in the form.
+Sleep, caffeine timing, and light timing can be entered using normal clock times like `10:00 PM` or `6:30 AM`.
 
 ## Behind the scenes in plain English
 
