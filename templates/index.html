@@ -15,7 +15,8 @@
 
     <section class="hero">
       <div>
-        <p class="eyebrow">Becoming Beta</p>
+        <p class="eyebrow">Daily Alignment Beta</p>
+        <p class="brand-mark">Becoming</p>
         <h1>Become more aligned, energized, and intentional each day.</h1>
         <p class="lede">
           Becoming helps you connect who you want to be with how you actually live.
@@ -35,24 +36,60 @@
           <p>Begin with identity and direction, then log the physical signals that shape your energy, performance, and consistency.</p>
         </div>
 
+        <section class="legend-card">
+          <div>
+            <h3>Quick Guide</h3>
+            <p class="muted">If you are new to this, use these cues. You do not need perfect answers.</p>
+          </div>
+          <div class="legend-grid">
+            <div>
+              <strong>North Star</strong>
+              <p>A simple direction for your life or this season. Example: “Build a healthier, calmer, stronger life.”</p>
+            </div>
+            <div>
+              <strong>Why It Matters</strong>
+              <p>The reason underneath the goal. Example: “I want more peace, energy, and self-respect.”</p>
+            </div>
+            <div>
+              <strong>Stress 0-5</strong>
+              <p>`0` = very calm, `3` = moderate stress, `5` = overwhelmed.</p>
+            </div>
+            <div>
+              <strong>Training 0-5</strong>
+              <p>`0` = rest day, `2` = light/moderate, `5` = very intense.</p>
+            </div>
+            <div>
+              <strong>Social Quality 1-5</strong>
+              <p>`1` = draining/disconnected, `3` = okay, `5` = energizing and meaningful.</p>
+            </div>
+            <div>
+              <strong>Location</strong>
+              <p>If you do not know latitude/longitude, keep the default or use your city’s coordinates from Maps or Google.</p>
+            </div>
+          </div>
+        </section>
+
         <section class="ritual-block morning-block">
           <div class="ritual-head">
             <p class="eyebrow">Morning Intention</p>
             <h3>Set direction before the day speeds up.</h3>
-            <p class="muted">Name the purpose behind the day and define three tiny steps that move your life forward.</p>
+            <p class="muted">Name the purpose behind the day and define three tiny steps that move your life forward. If you do not know your long-term North Star yet, just name what matters in this season of life.</p>
           </div>
           <div class="grid">
             <label class="wide">
               <span>North Star</span>
               <input name="north_star" value="{{ form_data.north_star }}" placeholder="What am I really working toward?">
+              <small>Examples: “Build a peaceful, strong life.” “Become a healthier and more grounded man.” “Move toward meaningful work.”</small>
             </label>
             <label class="wide">
               <span>Why It Matters</span>
               <input name="why_it_matters" value="{{ form_data.why_it_matters }}" placeholder="Why does this actually matter to me?">
+              <small>Examples: “So I can feel proud of how I live.” “So I stop drifting and build a life I respect.”</small>
             </label>
             <label class="wide">
               <span>How I Choose to Show Up</span>
               <input name="show_up_style" value="{{ form_data.show_up_style }}" placeholder="Present and warm, kind and generous, grounded, steady, calm, confident...">
+              <small>Think about your energy in conversations and work: calm, warm, focused, generous, steady, bold.</small>
             </label>
             <label>
               <span>Grateful For 1</span>
@@ -89,7 +126,7 @@
           <div class="ritual-head">
             <p class="eyebrow">Behavior Inputs</p>
             <h3>Log the signals that shape recovery and readiness.</h3>
-            <p class="muted">Use normal clock times for sleep and timing-based behaviors so the app feels more like real life.</p>
+            <p class="muted">Use rough, honest estimates. This works best when it is simple enough to do consistently, not perfectly.</p>
           </div>
           <div class="grid">
             <label>
@@ -103,10 +140,12 @@
             <label>
               <span>Sleep Quality</span>
               <input name="sleep_quality" value="{{ form_data.sleep_quality }}">
+              <small>Examples: poor, okay, good, great.</small>
             </label>
             <label>
               <span>Caffeine (mg)</span>
               <input type="number" min="0" step="1" name="caffeine_mg" value="{{ form_data.caffeine_mg }}">
+              <small>About 95mg in coffee, 150-200mg in many energy drinks.</small>
             </label>
             <label>
               <span>Caffeine Time</span>
@@ -115,6 +154,7 @@
             <label>
               <span>Morning Light (min)</span>
               <input type="number" min="0" step="5" name="light_minutes" value="{{ form_data.light_minutes }}">
+              <small>Time spent outside or in bright natural light soon after waking.</small>
             </label>
             <label>
               <span>Light Time</span>
@@ -123,34 +163,42 @@
             <label>
               <span>Training Intensity</span>
               <input type="number" min="0" max="5" step="1" name="training_intensity" value="{{ form_data.training_intensity }}">
+              <small>`0` rest, `1-2` light, `3` moderate, `4-5` hard.</small>
             </label>
             <label>
               <span>Focus Minutes</span>
               <input type="number" min="0" step="15" name="focus_minutes" value="{{ form_data.focus_minutes }}">
+              <small>Deep, intentional work. Estimate total quality focus, not just time at your desk.</small>
             </label>
             <label>
               <span>Stress (0-5)</span>
               <input type="number" min="0" max="5" step="1" name="stress" value="{{ form_data.stress }}">
+              <small>`0` calm, `2` manageable, `5` overwhelmed.</small>
             </label>
             <label>
               <span>Screen Minutes</span>
               <input type="number" min="0" step="5" name="screen_minutes" value="{{ form_data.screen_minutes }}">
+              <small>Non-essential or draining screen time is the most useful estimate here.</small>
             </label>
             <label>
               <span>Movement Minutes</span>
               <input type="number" min="0" step="5" name="movement_minutes" value="{{ form_data.movement_minutes }}">
+              <small>Walking, lifting, sports, mobility, or any meaningful physical movement.</small>
             </label>
             <label>
               <span>Social Quality (1-5)</span>
               <input type="number" min="1" max="5" step="1" name="social_quality" value="{{ form_data.social_quality }}">
+              <small>`1` draining, `3` neutral, `5` deeply energizing or connective.</small>
             </label>
             <label>
               <span>Latitude</span>
               <input type="number" step="0.0001" name="latitude" value="{{ form_data.latitude }}">
+              <small>Optional. Leave the default if you are unsure.</small>
             </label>
             <label>
               <span>Longitude</span>
               <input type="number" step="0.0001" name="longitude" value="{{ form_data.longitude }}">
+              <small>Optional. Leave the default if you are unsure.</small>
             </label>
           </div>
         </section>
@@ -189,7 +237,27 @@
             <p class="muted">{{ result_view.main_insight }}</p>
             <p class="muted">{{ result_view.circadian_message }}</p>
           </div>
-
+{% if result.becoming_readout %}
+<div class="detail-block becoming-readout">
+  <h3>{{ result.becoming_readout.headline }}</h3>
+  <p>{{ result.becoming_readout.honest_read }}</p>
+  <div class="steps">
+    <p><strong>{{ result.becoming_readout.step_1.label }}:</strong> {{ result.becoming_readout.step_1.action }}<br>
+    <span class="muted">→ {{ result.becoming_readout.step_1.why }}</span></p>
+    <p><strong>{{ result.becoming_readout.step_2.label }}:</strong> {{ result.becoming_readout.step_2.action }}<br>
+    <span class="muted">→ {{ result.becoming_readout.step_2.why }}</span></p>
+    <p><strong>{{ result.becoming_readout.step_3.label }}:</strong> {{ result.becoming_readout.step_3.action }}<br>
+    <span class="muted">→ {{ result.becoming_readout.step_3.why }}</span></p>
+  </div>
+  {% if result.becoming_readout.energy_window %}
+  <p class="muted">Peak window: {{ result.becoming_readout.energy_window }}</p>
+  {% endif %}
+  <p><em>{{ result.becoming_readout.closing_truth }}</em></p>
+  {% if result.becoming_readout.pattern_note %}
+  <p class="muted">Pattern: {{ result.becoming_readout.pattern_note }}</p>
+  {% endif %}
+</div>
+{% endif %}
           {% if result.action_steps %}
             <div class="detail-block">
               <h3>Your 3 Next Steps</h3>

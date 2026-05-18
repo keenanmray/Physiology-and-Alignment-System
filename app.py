@@ -284,6 +284,7 @@ def build_result_view(entry: dict | None) -> dict | None:
         "score_message": message,
         "main_insight": insights[0] if insights else "Keep logging a few days so the system can learn your patterns.",
         "circadian_message": circadian_copy(entry.get("circadian_status")),
+        "becoming_readout": entry.get("becoming_readout"),
     }
 
 
@@ -320,6 +321,8 @@ def index():
         result = engine.run_day(day)
         entry_payload = enrich_with_ml(result.to_log_dict(day), ml_model)
         entry_payload.update(generate_ai_coach_summary(entry_payload))
+        print("AI STATUS:", entry_payload.get("ai_coach_status"))
+        print("BECOMING READOUT:", entry_payload.get("becoming_readout"))
         entry_id = insert_entry(entry_payload)
         return redirect(url_for("index", saved=entry_id))
 

@@ -1,143 +1,291 @@
-"""LLM-powered coaching summary for Sleep System."""
+"""AI coaching summary for Becoming — powered by Claude."""
 
 from __future__ import annotations
 
 import json
 import os
-import ssl
 from typing import Any
-from urllib import error, request
 
-try:
-    from openai import OpenAI
-except ImportError:  # pragma: no cover - optional at dev time
-    OpenAI = None  # type: ignore[assignment]
+import anthropic
 
 
-API_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODEL = "gpt-4.1-mini"
+# ─────────────────────────────────────────────────────────────
+# THE SYSTEM PROMPT
+# This is Claude's identity inside Becoming.
+# This is the most important thing in this file.
+# Every word here shapes what the user receives.
+# ─────────────────────────────────────────────────────────────
+
+BECOMING_SYSTEM_PROMPT = """You are the inner voice of Becoming — a daily operating system 
+for people who refuse to sleepwalk through their lives.
+
+Your role is not to report data back at the user. Your role is to be the wisest, 
+most honest coach they have ever had — one who knows their biology AND their soul, 
+and speaks to both at once.
+
+The person talking to you has told you what they are working toward (their North Star), 
+why it matters to them, and how they want to show up. They have also logged the physical 
+signals that shape their energy today. Your job is to bridge those two worlds.
+
+YOUR VOICE:
+- Direct and warm. Like a mentor who genuinely believes in them.
+- Grounded in their actual data. Never generic.
+- Forward-looking. Always about who they are becoming.
+- Brief where possible. Every word earns its place.
+- Never motivational-poster language. No "you've got this!" or "amazing!".
+- Never clinical. You are not reading a report. You are talking to a person.
+- Speak to their North Star specifically. If they want to build a company, say that.
+  If they want to be a great parent, say that. Make it personal.
+
+YOUR JOB TODAY:
+1. Read the situation honestly — what does their biology and intention data actually say?
+2. Name one true thing about today that they need to hear
+3. Give them 3 steps grounded in BOTH their physiology AND their north star:
+   - Step 1 is always biology-first (what their body needs right now to feel alive)
+   - Step 2 is always direction-first (one concrete move toward their north star today)
+   - Step 3 is always identity-first (how to BE the person they said they want to become)
+4. Close with a single sentence that lands. Not a platitude. A truth about today.
+
+RULES:
+- Never say "great job" or "well done"
+- Never use the word "optimize"
+- Never give generic advice that could apply to anyone
+- Always reference their actual north star in at least one step
+- If their recovery is low, acknowledge it honestly — do not pretend it is fine
+- If their biology is strong, tell them to use that window aggressively
+
+Return your response as valid JSON only. No markdown. No preamble. Just the JSON object."""
 
 
-def build_coach_prompt(entry: dict[str, Any]) -> str:
+# ─────────────────────────────────────────────────────────────
+# THE PROMPT BUILDER
+# This takes the entry data and builds the context
+# we hand to Claude. Richer context = smarter response.
+# ─────────────────────────────────────────────────────────────
+
+def build_becoming_prompt(entry: dict[str, Any]) -> str:
+    """
+    Build the user-facing prompt from today's entry.
+    
+    We pull both sides of the Becoming equation:
+    - Identity side: north star, why, how to show up, gratitude, steps
+    - Biology side: sleep, light, caffeine, movement, stress, focus
+    """
+
+    # Identity inputs
+    north_star = entry.get("north_star") or "Not provided"
+    why_it_matters = entry.get("why_it_matters") or "Not provided"
+    show_up_style = entry.get("show_up_style") or "Not provided"
+    priority_step = entry.get("priority_step") or "Not provided"
+
     tiny_steps = entry.get("tiny_steps") or []
     gratitude_items = entry.get("gratitude_items") or []
-    recommendations = entry.get("recommendations") or []
     action_steps = entry.get("action_steps") or []
     insights = entry.get("insights") or []
+    recommendations = entry.get("recommendations") or []
 
-    parts = [
-        "You are an applied AI health coach inside a behavioral performance app.",
-        "Write a concise coaching note in plain English.",
-        "Keep it to 3 short paragraphs or fewer.",
-        "Be specific, encouraging, and practical. Avoid hype, diagnosis, or medical claims.",
-        "Connect physiology, performance, and meaning alignment when relevant.",
-        "",
-        f"Date: {entry.get('date')}",
-        f"Sleep hours: {entry.get('sleep_hours')}",
-        f"Sleep quality: {entry.get('sleep_quality')}",
-        f"Performance score: {entry.get('performance_score')}",
-        f"Tomorrow score: {entry.get('tomorrow_score')}",
-        f"ML readiness score: {entry.get('ml_prediction')}",
-        f"Recovery: {entry.get('recovery')}",
-        f"Circadian status: {entry.get('circadian_status')}",
-        f"Stress: {entry.get('stress')}",
-        f"Focus minutes: {entry.get('focus_minutes')}",
-        f"Movement minutes: {entry.get('movement_minutes')}",
-        f"Screen minutes: {entry.get('screen_minutes')}",
-        f"Social quality: {entry.get('social_quality')}",
-        f"North Star: {entry.get('north_star') or 'Not provided'}",
-        f"Why it matters: {entry.get('why_it_matters') or 'Not provided'}",
-        f"How they want to show up: {entry.get('show_up_style') or 'Not provided'}",
-        f"Morning gratitude: {', '.join(gratitude_items) if gratitude_items else 'Not provided'}",
-        f"Priority step: {entry.get('priority_step') or 'Not provided'}",
-        f"Tiny steps: {', '.join(tiny_steps) if tiny_steps else 'None provided'}",
-        f"Grounded action steps: {' | '.join(action_steps) if action_steps else 'None'}",
-        f"Rules-based insights: {' | '.join(insights) if insights else 'None'}",
-        f"Rules-based recommendations: {' | '.join(recommendations) if recommendations else 'None'}",
-    ]
-    return "\n".join(parts)
+    # Biology inputs
+    sleep_hours = entry.get("sleep_hours", "unknown")
+    sleep_quality = entry.get("sleep_quality", "unknown")
+    performance_score = entry.get("performance_score", "unknown")
+    recovery = entry.get("recovery", "unknown")
+    tomorrow_score = entry.get("tomorrow_score", "unknown")
+    circadian_status = entry.get("circadian_status", "unknown")
+    stress = entry.get("stress", "unknown")
+    focus_minutes = entry.get("focus_minutes", 0)
+    movement_minutes = entry.get("movement_minutes", 0)
+    screen_minutes = entry.get("screen_minutes", 0)
+    social_quality = entry.get("social_quality", "unknown")
+    caffeine_mg = entry.get("caffeine_mg", 0)
+    light_minutes = entry.get("light_minutes", 0)
+
+    # Solar context (if available)
+    sunrise = entry.get("sunrise_local") or "unknown"
+    morning_window = entry.get("morning_light_window") or "unknown"
+
+    prompt = f"""TODAY'S BECOMING ENTRY
+
+=== WHO THEY ARE BECOMING ===
+North Star: {north_star}
+Why it matters to them: {why_it_matters}
+How they choose to show up today: {show_up_style}
+What they are grateful for: {', '.join(gratitude_items) if gratitude_items else 'Nothing logged'}
+Tiny steps they set this morning: {', '.join(tiny_steps) if tiny_steps else 'None set'}
+Priority step (the one that matters most): {priority_step}
+
+=== THEIR BIOLOGY TODAY ===
+Performance score: {performance_score}/100
+Recovery score: {recovery}/100
+Tomorrow readiness: {tomorrow_score}/100
+Circadian status: {circadian_status}
+Sleep: {sleep_hours} hours, quality rated as "{sleep_quality}"
+Morning light exposure: {light_minutes} minutes
+Caffeine: {caffeine_mg}mg
+Focus work completed: {focus_minutes} minutes
+Movement: {movement_minutes} minutes
+Screen time: {screen_minutes} minutes
+Stress level: {stress}/5
+Social quality: {social_quality}/5
+Sunrise today: {sunrise}
+Optimal morning light window: {morning_window}
+
+=== WHAT OUR SYSTEM NOTICED ===
+Key insights: {' | '.join(insights) if insights else 'None'}
+Action steps suggested: {' | '.join(action_steps) if action_steps else 'None'}
+Recommendations: {' | '.join(recommendations) if recommendations else 'None'}
+
+=== YOUR TASK ===
+Generate today's Becoming readout for this person.
+Their North Star is: "{north_star}"
+Make every step specific to that direction and grounded in today's biology.
+Return valid JSON only, exactly matching this schema:
+
+{{
+  "headline": "2-6 word phrase capturing today's real situation",
+  "honest_read": "2-3 sentences. What does today's data actually say? Name reality honestly.",
+  "step_1": {{
+    "label": "Biology",
+    "action": "Specific action based on their physiological state right now",
+    "why": "One sentence on how this affects how alive they feel today"
+  }},
+  "step_2": {{
+    "label": "Direction",
+    "action": "One specific move toward their north star today — tangible and doable",
+    "why": "One sentence connecting this to their larger goal"
+  }},
+  "step_3": {{
+    "label": "Identity",
+    "action": "One way to BE the person they said they want to become today",
+    "why": "One sentence anchoring this to who they are becoming"
+  }},
+  "closing_truth": "One sentence. Make it land. Not a platitude — a truth about today.",
+  "energy_window": "Their peak performance window today based on sleep and circadian data (e.g. 9am-12pm)",
+  "pattern_note": "If there is a meaningful pattern to flag, one brief sentence. Otherwise null."
+}}"""
+
+    return prompt
 
 
-def request_via_http(entry: dict[str, Any], api_key: str, model: str) -> str | None:
-    payload = {
-        "model": model,
-        "instructions": "You are a thoughtful AI health and performance coach inside a web application.",
-        "input": build_coach_prompt(entry),
-    }
-    req = request.Request(
-        API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    allow_insecure = os.getenv("OPENAI_ALLOW_INSECURE_SSL") == "1"
-    context = ssl._create_unverified_context() if allow_insecure else None
-    with request.urlopen(req, timeout=20, context=context) as http_response:
-        data = json.loads(http_response.read().decode("utf-8"))
-    return data.get("output_text")
-
+# ─────────────────────────────────────────────────────────────
+# THE MAIN FUNCTION
+# This is what app.py calls. Same interface as before
+# so nothing else in your codebase needs to change.
+# ─────────────────────────────────────────────────────────────
 
 def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY")
+    """
+    Generate the Becoming readout using Claude.
+    
+    Called from app.py exactly like before:
+        entry_payload.update(generate_ai_coach_summary(entry_payload))
+    
+    Returns a dict that gets merged into the entry and passed to the template.
+    """
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+
     if not api_key:
         return {
             "ai_coach_summary": None,
             "ai_coach_model": None,
-            "ai_coach_status": "Set OPENAI_API_KEY to enable the AI coach summary.",
+            "ai_coach_status": "Set ANTHROPIC_API_KEY to enable the Becoming AI readout.",
+            "becoming_readout": None,
         }
-
-    model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
 
     try:
-        if OpenAI is not None:
-            client = OpenAI(api_key=api_key)
-            response = client.responses.create(
-                model=model,
-                instructions="You are a thoughtful AI health and performance coach inside a web application.",
-                input=build_coach_prompt(entry),
-            )
-            summary = response.output_text
-        else:
-            summary = request_via_http(entry, api_key, model)
-    except ssl.SSLError:
-        try:
-            summary = request_via_http(entry, api_key, model)
-        except Exception as exc:
-            return {
-                "ai_coach_summary": None,
-                "ai_coach_model": model,
-                "ai_coach_status": (
-                    "AI coach hit a local SSL certificate problem. "
-                    "Set OPENAI_ALLOW_INSECURE_SSL=1 to test locally, or fix your Python certificates. "
-                    f"Details: {exc}"
-                ),
-            }
-    except error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="ignore")
+        client = anthropic.Anthropic(api_key=api_key)
+
+        message = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=1200,
+            system=BECOMING_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": build_becoming_prompt(entry)}
+            ],
+        )
+
+        raw = message.content[0].text.strip()
+        # Strip markdown code fences if Claude wrapped the JSON
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+
+        readout = json.loads(raw)
+        # Build the plain-text summary for backward compatibility
+        # (your template currently uses ai_coach_summary as a text block)
+        plain_summary = _readout_to_plain_text(readout)
+
         return {
-            "ai_coach_summary": None,
-            "ai_coach_model": model,
-            "ai_coach_status": f"AI coach request failed: {detail[:180] or exc.reason}",
+            "ai_coach_summary": plain_summary,
+            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_status": "ready",
+            "becoming_readout": readout,  # structured version for future UI upgrade
         }
+
+    except json.JSONDecodeError:
+        # Claude returned something we couldn't parse — use raw text
+        return {
+            "ai_coach_summary": raw if "raw" in dir() else "Readout unavailable.",
+            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_status": "ready",
+            "becoming_readout": None,
+        }
+
     except Exception as exc:
         return {
             "ai_coach_summary": None,
-            "ai_coach_model": model,
-            "ai_coach_status": f"AI coach unavailable: {exc}",
+            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_status": f"AI readout unavailable: {exc}",
+            "becoming_readout": None,
         }
 
-    if not summary:
-        return {
-            "ai_coach_summary": None,
-            "ai_coach_model": model,
-            "ai_coach_status": "AI coach returned no text.",
-        }
 
-    return {
-        "ai_coach_summary": summary.strip(),
-        "ai_coach_model": model,
-        "ai_coach_status": "ready",
-    }
+def _readout_to_plain_text(readout: dict) -> str:
+    """
+    Convert the structured JSON readout into plain text
+    for your existing template that expects ai_coach_summary as a string.
+    
+    Once you upgrade your template to use the structured readout,
+    you can remove this function.
+    """
+    parts = []
+
+    headline = readout.get("headline", "")
+    if headline:
+        parts.append(headline.upper())
+        parts.append("")
+
+    honest_read = readout.get("honest_read", "")
+    if honest_read:
+        parts.append(honest_read)
+        parts.append("")
+
+    for step_key in ["step_1", "step_2", "step_3"]:
+        step = readout.get(step_key, {})
+        if step:
+            label = step.get("label", "")
+            action = step.get("action", "")
+            why = step.get("why", "")
+            parts.append(f"{label}: {action}")
+            if why:
+                parts.append(f"  → {why}")
+
+    parts.append("")
+
+    energy_window = readout.get("energy_window", "")
+    if energy_window:
+        parts.append(f"Peak window: {energy_window}")
+
+    closing = readout.get("closing_truth", "")
+    if closing:
+        parts.append("")
+        parts.append(closing)
+
+    pattern = readout.get("pattern_note")
+    if pattern:
+        parts.append("")
+        parts.append(f"Pattern: {pattern}")
+
+    return "\n".join(parts)

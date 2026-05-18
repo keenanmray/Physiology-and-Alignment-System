@@ -2,6 +2,8 @@
 
 `Becoming` is a beta daily alignment and physiology app. It helps people set clear intentions, log a few key body-and-behavior inputs, and get a simple performance score out of 100 with grounded next steps.
 
+It is designed to be usable even if someone does not already know health jargon, their exact coordinates, or have a perfectly defined life direction.
+
 Project link:
 
 https://github.com/keenanmray/Physiology-and-Alignment-System
@@ -24,6 +26,7 @@ https://github.com/keenanmray/Physiology-and-Alignment-System
 - Circadian guidance
 - Top recommendations based on the day
 - Morning intention snapshot
+- Plain-language field guidance and scoring cues for first-time users
 - Simple history view for tracking change over time
 
 ## Core idea
@@ -55,6 +58,7 @@ Sleep, caffeine timing, and light timing can be entered using normal clock times
 - Sleep, stress, screens, caffeine timing, light, movement, and focus all push the score up or down.
 - The recommendations are not random. They come from the specific inputs that looked most important that day.
 - The 3 next steps are grounded in both the user's stated direction and the physiology signals from that day.
+- The homepage includes examples and a quick legend so users can still use the app even if they do not know what “North Star” means yet.
 - The app stores entries over time so users can compare today with previous days.
 - There is also a lightweight ML layer in the background that can learn patterns from history, but the user-facing beta is intentionally kept simple.
 
@@ -79,7 +83,7 @@ Fastest path:
 2. Create a Render web service from the repo.
 3. Use:
    - Build command: `pip install -r requirements.txt`
-   - Start command: `gunicorn app:app`
+   - Start command: `python app.py`
 4. Deploy and share the generated Render URL.
 
 Important:
