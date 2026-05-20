@@ -1,0 +1,12 @@
+cat > migrate.py << 'EOF'
+import sqlite3, os
+db = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
+c = sqlite3.connect(db)
+try:
+    c.execute("ALTER TABLE daily_entries ADD COLUMN becoming_readout TEXT")
+    c.commit()
+    print("Column added successfully")
+except Exception as e:
+    print(f"Result: {e}")
+c.close()
+EOF
