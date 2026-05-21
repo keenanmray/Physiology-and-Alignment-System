@@ -65,6 +65,19 @@ from sleep_engine import (
 app = Flask(__name__)
 try:
     ensure_seed_data()
+    # Force becoming_readout column on live DB
+    import sqlite3 as _sqlite3
+    _db = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
+    with _sqlite3.connect(_db) as _c:
+        try:
+            _c.execute("ALTER TABLE daily_entries ADD COLUMN becoming_readout TEXT")
+            _c.commit()
+            print("Migration: becoming_readout column added")
+        except Exception:
+            print("Migration: becoming_readout column already exists")
+except Exception as exc:
+    print(f"Database seed failed: {exc}")
+    traceback.print_exc()
 except Exception as exc:  # pragma: no cover - startup safety for deployment
     print(f"Database seed failed: {exc}")
     traceback.print_exc()
