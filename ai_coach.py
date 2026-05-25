@@ -205,6 +205,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
         )
 
         raw = message.content[0].text.strip()
+        print(f"CLAUDE RAW RESPONSE: {raw[:100]}")
         # Strip markdown code fences if Claude wrapped the JSON
         if raw.startswith("```"):
             raw = raw.split("```")[1]
@@ -234,6 +235,8 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
         }
 
     except Exception as exc:
+        import traceback
+        traceback.print_exc()  # This will show in Render logs
         return {
             "ai_coach_summary": None,
             "ai_coach_model": "claude-sonnet-4-5",
