@@ -79,6 +79,28 @@
       </div>
       <button type="submit">Save Feedback</button>
     </form>
+    {% if reflected and entry.evening_readout %}
+    <section class="panel results-panel" style="margin-top: 1.5rem;">
+      <div class="panel-head">
+        <h2>{{ entry.evening_readout.headline }}</h2>
+        <p>Evening reflection — {{ entry.date }}</p>
+      </div>
+      <div class="detail-block">
+        <p>{{ entry.evening_readout.reflection }}</p>
+      </div>
+      <div class="detail-block">
+        <h3>What to carry forward</h3>
+        <p>{{ entry.evening_readout.highlight }}</p>
+      </div>
+      <div class="detail-block">
+        <h3>Into tomorrow</h3>
+        <p>{{ entry.evening_readout.tomorrow_seed }}</p>
+      </div>
+      <div class="detail-block">
+        <a href="{{ url_for('history') }}">← Back to history</a>
+      </div>
+    </section>
+    {% endif %}
   </main>
 </body>
 </html>

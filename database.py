@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from curses import raw
+
 import json
 import os
 import sqlite3
@@ -67,6 +67,7 @@ def init_db() -> None:
                 ai_coach_model TEXT,
                 ai_coach_status TEXT,
                 becoming_readout TEXT,
+                evening_readout TEXT,
                 actual_energy REAL,
                 actual_focus REAL,
                 actual_readiness REAL,
@@ -111,6 +112,7 @@ def init_db() -> None:
             ("ai_coach_model", "TEXT"),
             ("ai_coach_status", "TEXT"),
             ("becoming_readout", "TEXT"),
+            ("evening_readout", "TEXT"),
             ("actual_energy", "REAL"),
             ("actual_focus", "REAL"),
             ("actual_readiness", "REAL"),
@@ -132,13 +134,15 @@ def row_to_entry(row: sqlite3.Row) -> dict[str, Any]:
     for key in ("caffeine_events", "light", "recommendations", "action_steps", "insights", "behavior_flags", "ml_top_drivers", "tiny_steps", "gratitude_items"):
         raw = entry.get(key)
         entry[key] = json.loads(raw) if raw else []
-        raw = entry.get("becoming_readout")
-        if isinstance(raw, dict):
-            entry["becoming_readout"] = raw
-        elif isinstance(raw, str):
-            entry["becoming_readout"] = json.loads(raw)
-        else:
-            entry["becoming_readout"] = None
+    raw = entry.get("becoming_readout")
+    if isinstance(raw, dict):
+        entry["becoming_readout"] = raw
+    elif isinstance(raw, str):
+        entry["becoming_readout"] = json.loads(raw)
+    else:
+        entry["becoming_readout"] = None
+    raw = entry.get("evening_readout")
+    entry["evening_readout"] = json.loads(raw) if isinstance(raw, str) else raw
     return entry
 
 
@@ -247,6 +251,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
         "ai_coach_model": entry.get("ai_coach_model"),
         "ai_coach_status": entry.get("ai_coach_status"),
         "becoming_readout": json.dumps(entry.get("becoming_readout")) if entry.get("becoming_readout") else None,
+        "evening_readout": json.dumps(entry.get("evening_readout")) if entry.get("evening_readout") else None,
         "actual_energy": entry.get("actual_energy"),
         "actual_focus": entry.get("actual_focus"),
         "actual_readiness": entry.get("actual_readiness"),
@@ -273,7 +278,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
                 circadian_shift, circadian_status, performance_score, tomorrow_score,
                 ml_prediction, ml_training_rows, ml_validation_rmse, ml_top_drivers,
                 action_steps,
-                ai_coach_summary, ai_coach_model, ai_coach_status, becoming_readout,
+                ai_coach_summary, ai_coach_model, ai_coach_status, becoming_readout, evening_readout,
                 actual_energy, actual_focus, actual_readiness, alive_moment, drained_moment,
                 alignment_score, evening_lesson, feedback_notes, feedback_at,
                 recommendations, insights,
@@ -287,7 +292,7 @@ def insert_entry(entry: dict[str, Any]) -> int:
                 :circadian_shift, :circadian_status, :performance_score, :tomorrow_score,
                 :ml_prediction, :ml_training_rows, :ml_validation_rmse, :ml_top_drivers,
                 :action_steps,
-                :ai_coach_summary, :ai_coach_model, :ai_coach_status, :becoming_readout,
+                :ai_coach_summary, :ai_coach_model, :ai_coach_status, :becoming_readout, :evening_readout,
                 :actual_energy, :actual_focus, :actual_readiness, :alive_moment, :drained_moment,
                 :alignment_score, :evening_lesson, :feedback_notes, :feedback_at,
                 :recommendations, :insights,
@@ -310,6 +315,7 @@ def update_feedback(
     evening_lesson: str,
     feedback_notes: str,
     feedback_at: str,
+    evening_readout: str | None = None,
 ) -> None:
     with connect_db() as connection:
         connection.execute(
@@ -317,7 +323,8 @@ def update_feedback(
             UPDATE daily_entries
             SET actual_energy = ?, actual_focus = ?, actual_readiness = ?,
                 alive_moment = ?, drained_moment = ?, alignment_score = ?,
-                evening_lesson = ?, feedback_notes = ?, feedback_at = ?
+                evening_lesson = ?, feedback_notes = ?, feedback_at = ?,
+                evening_readout = ?
             WHERE id = ?
             """,
             (
@@ -330,6 +337,7 @@ def update_feedback(
                 evening_lesson,
                 feedback_notes,
                 feedback_at,
+                evening_readout,
                 entry_id,
             ),
         )

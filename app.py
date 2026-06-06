@@ -19,7 +19,7 @@ from database import (
 from history_helpers import summary_metrics
 
 try:
-    from ai_coach import generate_ai_coach_summary
+    from ai_coach import generate_ai_coach_summary, generate_evening_reflection
 except Exception as exc:  # pragma: no cover - startup safety for deployment
     print(f"AI coach import disabled: {exc}")
 
@@ -28,6 +28,11 @@ except Exception as exc:  # pragma: no cover - startup safety for deployment
             "ai_coach_summary": None,
             "ai_coach_model": None,
             "ai_coach_status": "disabled",
+        }
+    def generate_evening_reflection(entry: dict) -> dict:
+        return {
+            "evening_reflection": None,
+            "evening_status": "disabled",
         }
 
 try:
@@ -65,7 +70,6 @@ from sleep_engine import (
 app = Flask(__name__)
 try:
     ensure_seed_data()
-    # Force becoming_readout column on live DB
     import sqlite3 as _sqlite3
     _db = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
     with _sqlite3.connect(_db) as _c:
@@ -76,9 +80,6 @@ try:
         except Exception:
             print("Migration: becoming_readout column already exists")
 except Exception as exc:
-    print(f"Database seed failed: {exc}")
-    traceback.print_exc()
-except Exception as exc:  # pragma: no cover - startup safety for deployment
     print(f"Database seed failed: {exc}")
     traceback.print_exc()
 
@@ -375,6 +376,7 @@ def feedback(entry_id: int):
         return redirect(url_for("history"))
 
     if request.method == "POST":
+        # Step 1: save what the user filled in
         update_feedback(
             entry_id=entry_id,
             actual_energy=parse_optional_float("actual_energy"),
@@ -387,12 +389,41 @@ def feedback(entry_id: int):
             feedback_notes=request.form.get("feedback_notes", "").strip(),
             feedback_at=datetime.now().isoformat(timespec="minutes"),
         )
-        return redirect(url_for("history"))
+
+        # Step 2: load the updated entry so Claude has the evening data
+        updated_entry = get_entry(entry_id)
+
+        # Step 3: call Claude for the evening reflection
+        reflection_result = generate_evening_reflection(updated_entry)
+
+        # Step 4: save the reflection back to the database
+        if reflection_result.get("evening_reflection"):
+            import json as _json
+            update_feedback(
+                entry_id=entry_id,
+                actual_energy=updated_entry.get("actual_energy"),
+                actual_focus=updated_entry.get("actual_focus"),
+                actual_readiness=updated_entry.get("actual_readiness"),
+                alive_moment=updated_entry.get("alive_moment", ""),
+                drained_moment=updated_entry.get("drained_moment", ""),
+                alignment_score=updated_entry.get("alignment_score"),
+                evening_lesson=updated_entry.get("evening_lesson", ""),
+                feedback_notes=updated_entry.get("feedback_notes", ""),
+                feedback_at=updated_entry.get("feedback_at", ""),
+                evening_readout=_json.dumps(reflection_result["evening_reflection"]),
+            )
+
+        # Step 5: redirect back to this page — the reflection will now load from DB
+        return redirect(url_for("feedback", entry_id=entry_id, reflected=1))
+
+    # GET request — load entry and check if we should show the reflection
+    reflected = request.args.get("reflected", type=int)
 
     return render_template(
         "feedback.html",
         entry=entry,
         active_page="history",
+        reflected=reflected,
     )
 
 

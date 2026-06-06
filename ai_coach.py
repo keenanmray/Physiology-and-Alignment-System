@@ -202,6 +202,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
             messages=[
                 {"role": "user", "content": build_becoming_prompt(entry)}
             ],
+            timeout=30,
         )
 
         raw = message.content[0].text.strip()
@@ -292,3 +293,135 @@ def _readout_to_plain_text(readout: dict) -> str:
         parts.append(f"Pattern: {pattern}")
 
     return "\n".join(parts)
+
+# ─────────────────────────────────────────────────────────────
+# EVENING REFLECTION
+# Called after the user submits their evening check-in.
+# Compares morning intention with evening reality.
+# ─────────────────────────────────────────────────────────────
+
+EVENING_SYSTEM_PROMPT = """You are the evening voice of Becoming.
+
+The day is done. Your job is not to judge it — it's to help the person
+see it clearly, learn from it honestly, and carry the right thing into tomorrow.
+
+YOUR VOICE:
+- Calm and clear. The day is over. No urgency.
+- Honest without being harsh. Name what happened.
+- Forward-looking. Always end facing tomorrow.
+- Brief. This is a closing note, not a report.
+- Never say "great job" or praise effort generically.
+- If they fell short of their intention, say so gently but directly.
+- If they showed up well, name specifically what that looked like.
+
+Return valid JSON only. No markdown. No preamble."""
+
+
+def build_evening_prompt(entry: dict[str, Any]) -> str:
+    # Morning intention
+    north_star = entry.get("north_star") or "Not provided"
+    show_up_style = entry.get("show_up_style") or "Not provided"
+    priority_step = entry.get("priority_step") or "Not provided"
+    tiny_steps = entry.get("tiny_steps") or []
+
+    # Evening reality
+    actual_energy = entry.get("actual_energy")
+    actual_focus = entry.get("actual_focus")
+    alive_moment = entry.get("alive_moment") or "Not logged"
+    drained_moment = entry.get("drained_moment") or "Not logged"
+    alignment_score = entry.get("alignment_score")
+    evening_lesson = entry.get("evening_lesson") or "Not logged"
+
+    # Biology context
+    performance_score = entry.get("performance_score")
+    recovery = entry.get("recovery")
+
+    prompt = f"""EVENING REFLECTION — {entry.get('date', 'today')}
+
+=== WHAT THEY INTENDED THIS MORNING ===
+North Star: {north_star}
+How they planned to show up: {show_up_style}
+Priority step: {priority_step}
+Tiny steps: {', '.join(tiny_steps) if tiny_steps else 'None set'}
+
+=== WHAT ACTUALLY HAPPENED ===
+Actual energy (0-100): {actual_energy if actual_energy is not None else 'Not logged'}
+Actual focus (0-100): {actual_focus if actual_focus is not None else 'Not logged'}
+What made them feel alive: {alive_moment}
+What drained them: {drained_moment}
+Self-reported alignment (0-100): {alignment_score if alignment_score is not None else 'Not logged'}
+Lesson from today: {evening_lesson}
+
+=== BIOLOGY CONTEXT ===
+Morning performance score: {performance_score}/100
+Morning recovery score: {recovery}/100
+
+=== YOUR TASK ===
+Compare morning intention with evening reality.
+Their north star is: "{north_star}"
+Return valid JSON only, matching this schema exactly:
+
+{{
+  "headline": "2-5 words capturing what today actually was",
+  "reflection": "2-3 sentences comparing intention vs reality. Specific and honest.",
+  "highlight": "The one thing worth carrying forward — what went right or what was learned.",
+  "tomorrow_seed": "One specific thing to bring into tomorrow morning."
+}}"""
+
+    return prompt
+
+
+def generate_evening_reflection(entry: dict[str, Any]) -> dict[str, Any]:
+    """
+    Generate the evening reflection using Claude.
+    Called from app.py after the evening form is saved.
+    """
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+
+    if not api_key:
+        return {
+            "evening_reflection": None,
+            "evening_status": "No API key set.",
+        }
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+
+        message = client.messages.create(
+            model="claude-sonnet-4-5",
+            max_tokens=600,
+            system=EVENING_SYSTEM_PROMPT,
+            messages=[
+                {"role": "user", "content": build_evening_prompt(entry)}
+            ],
+            timeout=30,
+        )
+
+        raw = message.content[0].text.strip()
+
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+
+        reflection = json.loads(raw)
+
+        return {
+            "evening_reflection": reflection,
+            "evening_status": "ready",
+        }
+
+    except json.JSONDecodeError:
+        return {
+            "evening_reflection": None,
+            "evening_status": "Parse error",
+        }
+
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return {
+            "evening_reflection": None,
+            "evening_status": f"Unavailable: {exc}",
+        }
