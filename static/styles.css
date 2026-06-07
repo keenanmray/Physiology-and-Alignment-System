@@ -426,3 +426,112 @@ li {
     padding: 18px;
   }
 }
+/* ── BECOMING READOUT ── */
+.becoming-readout {
+  border-top: none;
+  padding-top: 0;
+}
+
+.energy-window {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.readout-headline {
+  font-size: clamp(1.3rem, 2.5vw, 1.75rem);
+  line-height: 1.2;
+  color: var(--ink);
+  margin-bottom: 14px;
+  font-weight: 700;
+}
+
+.readout-honest {
+  color: var(--muted);
+  line-height: 1.68;
+  font-size: 0.96rem;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.step-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.step-card {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  background: #fffdf8;
+  padding: 14px 16px;
+}
+
+.step-card.direction { border-left-color: var(--accent-2); }
+.step-card.identity  { border-left-color: var(--accent-3); }
+
+.step-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+
+.step-card.direction .step-tag { color: var(--accent-2); }
+.step-card.identity  .step-tag { color: var(--accent-3); }
+
+.step-action {
+  font-size: 0.95rem;
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+
+.step-why {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.closing-truth {
+  font-style: italic;
+  font-size: 1.02rem;
+  color: var(--ink);
+  line-height: 1.55;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
+.pattern-note {
+  margin-top: 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 10px 14px;
+  background: rgba(199, 127, 43, 0.06);
+  border-radius: 10px;
+  border-left: 2px solid var(--accent-2);
+  line-height: 1.5;
+}
+
+/* ── UPGRADED SCORES ── */
+.score-card span {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.score-card strong {
+  font-size: 2.8rem;
+  line-height: 1;
+}

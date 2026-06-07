@@ -238,26 +238,44 @@
             <p class="muted">{{ result_view.circadian_message }}</p>
           </div>
 {% if result.becoming_readout %}
-<div class="detail-block becoming-readout">
-  <h3>{{ result.becoming_readout.headline }}</h3>
-  <p>{{ result.becoming_readout.honest_read }}</p>
-  <div class="steps">
-    <p><strong>{{ result.becoming_readout.step_1.label }}:</strong> {{ result.becoming_readout.step_1.action }}<br>
-    <span class="muted">→ {{ result.becoming_readout.step_1.why }}</span></p>
-    <p><strong>{{ result.becoming_readout.step_2.label }}:</strong> {{ result.becoming_readout.step_2.action }}<br>
-    <span class="muted">→ {{ result.becoming_readout.step_2.why }}</span></p>
-    <p><strong>{{ result.becoming_readout.step_3.label }}:</strong> {{ result.becoming_readout.step_3.action }}<br>
-    <span class="muted">→ {{ result.becoming_readout.step_3.why }}</span></p>
-  </div>
-  {% if result.becoming_readout.energy_window %}
-  <p class="muted">Peak window: {{ result.becoming_readout.energy_window }}</p>
-  {% endif %}
-  <p><em>{{ result.becoming_readout.closing_truth }}</em></p>
-  {% if result.becoming_readout.pattern_note %}
-  <p class="muted">Pattern: {{ result.becoming_readout.pattern_note }}</p>
-  {% endif %}
-</div>
-{% endif %}
+            {% set r = result.becoming_readout %}
+            <div class="detail-block becoming-readout">
+              {% if r.energy_window %}
+              <p class="energy-window">Peak window · {{ r.energy_window }}</p>
+              {% endif %}
+              <h3 class="readout-headline">{{ r.headline }}</h3>
+              <p class="readout-honest">{{ r.honest_read }}</p>
+              <div class="step-cards">
+                {% if r.step_1 %}
+                <div class="step-card biology">
+                  <p class="step-tag">Biology</p>
+                  <p class="step-action">{{ r.step_1.action }}</p>
+                  <p class="step-why">→ {{ r.step_1.why }}</p>
+                </div>
+                {% endif %}
+                {% if r.step_2 %}
+                <div class="step-card direction">
+                  <p class="step-tag">Direction</p>
+                  <p class="step-action">{{ r.step_2.action }}</p>
+                  <p class="step-why">→ {{ r.step_2.why }}</p>
+                </div>
+                {% endif %}
+                {% if r.step_3 %}
+                <div class="step-card identity">
+                  <p class="step-tag">Identity</p>
+                  <p class="step-action">{{ r.step_3.action }}</p>
+                  <p class="step-why">→ {{ r.step_3.why }}</p>
+                </div>
+                {% endif %}
+              </div>
+              {% if r.closing_truth %}
+              <p class="closing-truth">{{ r.closing_truth }}</p>
+              {% endif %}
+              {% if r.pattern_note %}
+              <p class="pattern-note">Pattern: {{ r.pattern_note }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
           {% if result.action_steps %}
             <div class="detail-block">
               <h3>Your 3 Next Steps</h3>
