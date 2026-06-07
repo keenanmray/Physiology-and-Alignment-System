@@ -276,16 +276,7 @@
               {% endif %}
             </div>
             {% endif %}
-          {% if result.action_steps %}
-            <div class="detail-block">
-              <h3>Your 3 Next Steps</h3>
-              <ul>
-                {% for item in result.action_steps %}
-                  <li>{{ item }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
+          
 
           {% if result.sunrise_local or result.sunset_local %}
             <div class="detail-block">
