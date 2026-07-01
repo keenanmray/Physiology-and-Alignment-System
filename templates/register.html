@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Becoming — Create Account</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page" style="max-width: 480px;">
+
+    <div style="text-align: center; padding: 48px 0 32px;">
+      <p class="eyebrow">Daily Operating System</p>
+      <h1 style="font-size: 2.8rem;">Becoming</h1>
+      <p class="lede" style="margin-top: 12px;">Create your account and start your first day.</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="success-banner" style="background: rgba(180,60,60,0.1); color: #8b2020; border-color: rgba(180,60,60,0.2); margin-bottom: 16px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Create account</h2>
+        <p>Takes 30 seconds. No credit card required.</p>
+      </div>
+      <form method="post">
+        <div class="grid" style="grid-template-columns: 1fr; gap: 14px; margin-top: 20px;">
+          <label>
+            <span>Your name</span>
+            <input type="text" name="name" placeholder="First name" required autocomplete="name">
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" placeholder="At least 8 characters" required autocomplete="new-password">
+          </label>
+        </div>
+        <button type="submit">Create account and start →</button>
+      </form>
+      <p class="muted" style="text-align: center; margin-top: 18px; font-size: 0.9rem;">
+        Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Sign in</a>
+      </p>
+    </div>
+
+  </main>
+</body>
+</html>

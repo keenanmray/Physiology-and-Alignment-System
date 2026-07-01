@@ -9,6 +9,8 @@
 <body>
   <main class="page">
     <nav class="topnav">
+      <span class="muted" style="padding: 10px 14px; font-size: 0.88rem;">{{ current_user.name }}</span>
+      <a href="{{ url_for('logout') }}">Sign out</a>
       <a class="{{ 'active' if active_page == 'dashboard' else '' }}" href="{{ url_for('index') }}">Dashboard</a>
       <a class="{{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('history') }}">History</a>
     </nav>

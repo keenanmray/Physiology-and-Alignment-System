@@ -6,7 +6,8 @@ from datetime import date, datetime
 import os
 import traceback
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, flash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 
 from database import (
     ensure_seed_data,
@@ -15,7 +16,11 @@ from database import (
     insert_entry,
     list_entries,
     update_feedback,
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
 )
+
 from history_helpers import summary_metrics
 
 try:
@@ -68,6 +73,16 @@ from sleep_engine import (
 
 
 app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "becoming-dev-secret-change-in-production")
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+login_manager.login_message = "Please log in to access Becoming."
+
+@login_manager.user_loader
+def load_user(user_id):
+    return get_user_by_id(int(user_id))
 try:
     ensure_seed_data()
     import sqlite3 as _sqlite3
@@ -316,8 +331,62 @@ def enrich_with_ml(entry: dict, model) -> dict:
     entry["ml_top_drivers"] = model.top_drivers(entry)
     return entry
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
 
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if not name or not email or not password:
+            flash("Please fill in all fields.")
+            return render_template("register.html")
+
+        if len(password) < 8:
+            flash("Password must be at least 8 characters.")
+            return render_template("register.html")
+
+        user = create_user(email=email, password=password, name=name)
+        if user is None:
+            flash("An account with that email already exists.")
+            return render_template("register.html")
+
+        login_user(user)
+        return redirect(url_for("index"))
+
+    return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "").strip()
+
+        user = get_user_by_email(email=email, password=password)
+        if user is None:
+            flash("Invalid email or password.")
+            return render_template("login.html")
+
+        login_user(user, remember=True)
+        return redirect(url_for("index"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def index():
     entries = list_entries()
     ml_model = train_tomorrow_model(entries)
@@ -334,6 +403,7 @@ def index():
         engine = SleepSystemEngine(Person(name="Keenan"))
         result = engine.run_day(day)
         entry_payload = enrich_with_ml(result.to_log_dict(day), ml_model)
+        entry_payload["user_id"] = current_user.id
         entry_payload.update(generate_ai_coach_summary(entry_payload))
         print("AI STATUS:", entry_payload.get("ai_coach_status"))
         print("BECOMING READOUT:", entry_payload.get("becoming_readout"))
@@ -343,7 +413,7 @@ def index():
     if saved_entry_id:
         result = get_entry(saved_entry_id)
         result_view = build_result_view(result)
-        deltas = compare_saved_entry(result, get_previous_entry(saved_entry_id))
+        deltas = compare_saved_entry(result, get_previous_entry(saved_entry_id, user_id=current_user.id))
 
     return render_template(
         "index.html",
@@ -357,8 +427,9 @@ def index():
 
 
 @app.route("/history")
+@login_required
 def history():
-    entries = list_entries()
+    entries = list_entries(user_id=current_user.id)
     history_entries = list(reversed(entries[-30:]))
     metrics = summary_metrics(entries)
     return render_template(
@@ -370,6 +441,7 @@ def history():
 
 
 @app.route("/feedback/<int:entry_id>", methods=["GET", "POST"])
+@login_required
 def feedback(entry_id: int):
     entry = get_entry(entry_id)
     if entry is None:

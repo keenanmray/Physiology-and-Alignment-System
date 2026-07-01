@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Becoming — Sign In</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <main class="page" style="max-width: 480px;">
+
+    <div style="text-align: center; padding: 48px 0 32px;">
+      <p class="eyebrow">Daily Operating System</p>
+      <h1 style="font-size: 2.8rem;">Becoming</h1>
+      <p class="lede" style="margin-top: 12px;">Sign in to your account.</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="success-banner" style="background: rgba(180,60,60,0.1); color: #8b2020; border-color: rgba(180,60,60,0.2); margin-bottom: 16px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Sign in</h2>
+        <p>Enter your email and password to continue.</p>
+      </div>
+      <form method="post">
+        <div class="grid" style="grid-template-columns: 1fr; gap: 14px; margin-top: 20px;">
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" placeholder="Your password" required autocomplete="current-password">
+          </label>
+        </div>
+        <button type="submit">Sign in</button>
+      </form>
+      <p class="muted" style="text-align: center; margin-top: 18px; font-size: 0.9rem;">
+        Don't have an account? <a href="{{ url_for('register') }}" style="color: var(--accent); text-decoration: none; font-weight: 600;">Create one</a>
+      </p>
+    </div>
+
+  </main>
+</body>
+</html>
