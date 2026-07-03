@@ -299,87 +299,9 @@
         {% endif %}
           
 
-          {% if result.sunrise_local or result.sunset_local %}
-            <div class="detail-block">
-              <h3>Solar Timing</h3>
-              <ul>
-                {% if result.sunrise_local %}
-                  <li>Sunrise: {{ result.sunrise_local }}</li>
-                {% endif %}
-                {% if result.sunset_local %}
-                  <li>Sunset: {{ result.sunset_local }}</li>
-                {% endif %}
-                {% if result.morning_light_window %}
-                  <li>Best morning outdoor-light window: {{ result.morning_light_window }}</li>
-                {% endif %}
-                {% if result.evening_dim_window %}
-                  <li>Best evening dim-light window: {{ result.evening_dim_window }}</li>
-                {% endif %}
-              </ul>
-            </div>
-          {% endif %}
-
-          <div class="detail-block">
-            <h3>Top Recommendations</h3>
-            <ul>
-              {% for item in result.recommendations %}
-                <li>{{ item }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <h3>What the system noticed</h3>
-            <ul>
-              {% for item in result.insights %}
-                <li>{{ item }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-          {% if result.north_star or result.tiny_steps %}
-            <div class="detail-block">
-              <h3>Morning Direction</h3>
-              <ul>
-                {% if result.north_star %}
-                  <li>North Star: {{ result.north_star }}</li>
-                {% endif %}
-                {% if result.why_it_matters %}
-                  <li>Why it matters: {{ result.why_it_matters }}</li>
-                {% endif %}
-                {% if result.show_up_style %}
-                  <li>How you chose to show up: {{ result.show_up_style }}</li>
-                {% endif %}
-                {% for item in result.gratitude_items %}
-                  <li>Grateful for: {{ item }}</li>
-                {% endfor %}
-                {% if result.priority_step %}
-                  <li>Priority step: {{ result.priority_step }}</li>
-                {% endif %}
-                {% for step in result.tiny_steps %}
-                  <li>Tiny step: {{ step }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-          {% endif %}
-
-          <div class="detail-block">
-            <h3>Compared with your last log</h3>
-            <ul>
-              {% for item in deltas %}
-                <li>{{ item }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-
-        {% else %}
-          <div class="empty-state">
-            <h3>No analysis yet</h3>
-            <p>Submit a daily entry and Becoming will turn your intentions and physiology into a score, an explanation, and 3 grounded next steps.</p>
-          </div>
-        {% endif %}
       </section>
     </section>
   </main>
 </body>
-</html>
+</html>    
+
