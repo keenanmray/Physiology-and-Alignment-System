@@ -1,24 +1,36 @@
-"""SQLite persistence for Becoming — with user authentication."""
+"""Persistence for Becoming — SQLite locally, PostgreSQL on Render."""
 
 from __future__ import annotations
 
 import json
 import os
 import sqlite3
+from contextlib import contextmanager
 from typing import Any
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 
+# ─────────────────────────────────────────────────────────
+# DATABASE MODE DETECTION
+# Render sets DATABASE_URL when you add a PostgreSQL service.
+# Locally it's not set — so we fall back to SQLite.
+# ─────────────────────────────────────────────────────────
+DATABASE_URL = os.getenv("DATABASE_URL")
+IS_POSTGRES = bool(DATABASE_URL)
+PH = "%s" if IS_POSTGRES else "?"   # placeholder character differs
 
-# ─────────────────────────────────────────────
+if IS_POSTGRES:
+    import psycopg2
+    import psycopg2.extras
+
+DB_PATH = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
+LEGACY_LOG_PATH = "log.json"
+
+
+# ─────────────────────────────────────────────────────────
 # USER CLASS
-# Flask-Login needs a User object to track who
-# is currently logged in. UserMixin gives us
-# default implementations of four required
-# properties (is_authenticated, is_active, etc.)
-# We just add our own data on top.
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────
 
 class User(UserMixin):
     def __init__(self, id: int, email: str, name: str):
@@ -27,233 +39,184 @@ class User(UserMixin):
         self.name = name
 
 
-DB_PATH = os.getenv("SLEEP_SYSTEM_DB_PATH", "sleep_system.db")
-LEGACY_LOG_PATH = "log.json"
+# ─────────────────────────────────────────────────────────
+# CONNECTION HELPERS
+# ─────────────────────────────────────────────────────────
+
+def connect_db():
+    if IS_POSTGRES:
+        return psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+        )
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
-def connect_db() -> sqlite3.Connection:
-    connection = sqlite3.connect(DB_PATH)
-    connection.row_factory = sqlite3.Row
-    return connection
+@contextmanager
+def get_db():
+    """Open a connection, commit on success, rollback on error, always close."""
+    conn = connect_db()
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
+
+def _x(conn, sql: str, params=None):
+    """Run a SQL statement and return the cursor."""
+    cur = conn.cursor()
+    if params is not None:
+        cur.execute(sql, params)
+    else:
+        cur.execute(sql)
+    return cur
+
+
+# ─────────────────────────────────────────────────────────
+# SCHEMA
+# ─────────────────────────────────────────────────────────
 
 def init_db() -> None:
-    with connect_db() as connection:
+    pk = "SERIAL PRIMARY KEY" if IS_POSTGRES else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
-        # ── USERS TABLE ──────────────────────────────
-        # New table. Each row is one Becoming account.
-        # password_hash: we NEVER store plain passwords.
-        #   werkzeug hashes it before storing.
-        # ─────────────────────────────────────────────
-        connection.execute(
-            """
+    with get_db() as conn:
+        _x(conn, f"""
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id {pk},
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 name TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
-            """
-        )
+        """)
 
-        # ── DAILY ENTRIES TABLE ───────────────────────
-        # Same as before but with user_id added.
-        # REFERENCES users(id) means SQLite knows this
-        # links to the users table.
-        # ─────────────────────────────────────────────
-        connection.execute(
-            """
+        _x(conn, f"""
             CREATE TABLE IF NOT EXISTS daily_entries (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id {pk},
                 user_id INTEGER REFERENCES users(id),
                 date TEXT NOT NULL,
-                sleep_start REAL,
-                sleep_end REAL,
-                sleep_hours REAL,
-                sleep_quality TEXT,
-                training INTEGER,
-                caffeine INTEGER,
-                caffeine_events TEXT,
-                light TEXT,
-                focus_minutes INTEGER,
-                stress INTEGER,
-                screen_minutes INTEGER,
-                movement_minutes INTEGER,
-                social_quality INTEGER,
-                north_star TEXT,
-                why_it_matters TEXT,
-                show_up_style TEXT,
-                gratitude_items TEXT,
-                priority_step TEXT,
-                tiny_steps TEXT,
-                latitude REAL,
-                longitude REAL,
-                sunrise_local TEXT,
-                sunset_local TEXT,
-                morning_light_window TEXT,
-                evening_dim_window TEXT,
-                energy REAL,
-                recovery REAL,
-                sleep_debt REAL,
-                circadian_shift REAL,
-                circadian_status TEXT,
-                performance_score REAL,
-                tomorrow_score REAL,
-                ml_prediction REAL,
-                ml_training_rows INTEGER,
-                ml_validation_rmse REAL,
-                ml_top_drivers TEXT,
-                action_steps TEXT,
-                ai_coach_summary TEXT,
-                ai_coach_model TEXT,
-                ai_coach_status TEXT,
-                becoming_readout TEXT,
-                evening_readout TEXT,
-                actual_energy REAL,
-                actual_focus REAL,
-                actual_readiness REAL,
-                alive_moment TEXT,
-                drained_moment TEXT,
-                alignment_score REAL,
-                evening_lesson TEXT,
-                feedback_notes TEXT,
-                feedback_at TEXT,
-                recommendations TEXT,
-                insights TEXT,
-                behavior_flags TEXT,
+                sleep_start REAL, sleep_end REAL, sleep_hours REAL,
+                sleep_quality TEXT, training INTEGER, caffeine INTEGER,
+                caffeine_events TEXT, light TEXT, focus_minutes INTEGER,
+                stress INTEGER, screen_minutes INTEGER, movement_minutes INTEGER,
+                social_quality INTEGER, north_star TEXT, why_it_matters TEXT,
+                show_up_style TEXT, gratitude_items TEXT, priority_step TEXT,
+                tiny_steps TEXT, latitude REAL, longitude REAL,
+                sunrise_local TEXT, sunset_local TEXT,
+                morning_light_window TEXT, evening_dim_window TEXT,
+                energy REAL, recovery REAL, sleep_debt REAL,
+                circadian_shift REAL, circadian_status TEXT,
+                performance_score REAL, tomorrow_score REAL,
+                ml_prediction REAL, ml_training_rows INTEGER,
+                ml_validation_rmse REAL, ml_top_drivers TEXT,
+                action_steps TEXT, ai_coach_summary TEXT,
+                ai_coach_model TEXT, ai_coach_status TEXT,
+                becoming_readout TEXT, evening_readout TEXT,
+                actual_energy REAL, actual_focus REAL, actual_readiness REAL,
+                alive_moment TEXT, drained_moment TEXT, alignment_score REAL,
+                evening_lesson TEXT, feedback_notes TEXT, feedback_at TEXT,
+                recommendations TEXT, insights TEXT, behavior_flags TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
-            """
-        )
+        """)
 
-        # ── MIGRATION ─────────────────────────────────
-        # For columns that didn't exist in older versions
-        # of the database, we add them safely here.
-        # This runs every startup but only adds columns
-        # that are actually missing.
-        # ─────────────────────────────────────────────
-        existing_columns = {
-            row["name"] for row in connection.execute(
-                "PRAGMA table_info(daily_entries)"
-            ).fetchall()
-        }
-        for column_name, column_type in (
-            ("user_id", "INTEGER"),
-            ("sleep_hours", "REAL"),
-            ("recommendations", "TEXT"),
-            ("insights", "TEXT"),
-            ("north_star", "TEXT"),
-            ("why_it_matters", "TEXT"),
-            ("show_up_style", "TEXT"),
-            ("gratitude_items", "TEXT"),
-            ("priority_step", "TEXT"),
-            ("tiny_steps", "TEXT"),
-            ("latitude", "REAL"),
-            ("longitude", "REAL"),
-            ("sunrise_local", "TEXT"),
-            ("sunset_local", "TEXT"),
-            ("morning_light_window", "TEXT"),
-            ("evening_dim_window", "TEXT"),
-            ("ml_prediction", "REAL"),
-            ("ml_training_rows", "INTEGER"),
-            ("ml_validation_rmse", "REAL"),
-            ("ml_top_drivers", "TEXT"),
-            ("action_steps", "TEXT"),
-            ("ai_coach_summary", "TEXT"),
-            ("ai_coach_model", "TEXT"),
-            ("ai_coach_status", "TEXT"),
-            ("becoming_readout", "TEXT"),
-            ("evening_readout", "TEXT"),
-            ("actual_energy", "REAL"),
-            ("actual_focus", "REAL"),
-            ("actual_readiness", "REAL"),
-            ("alive_moment", "TEXT"),
-            ("drained_moment", "TEXT"),
-            ("alignment_score", "REAL"),
-            ("evening_lesson", "TEXT"),
-            ("feedback_notes", "TEXT"),
+        # Migration: add any columns missing from older schema versions
+        if IS_POSTGRES:
+            cur = _x(conn, """
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'daily_entries'
+            """)
+            existing = {row['column_name'] for row in cur.fetchall()}
+        else:
+            cur = _x(conn, "PRAGMA table_info(daily_entries)")
+            existing = {row['name'] for row in cur.fetchall()}
+
+        migrations = [
+            ("user_id", "INTEGER"), ("sleep_hours", "REAL"),
+            ("recommendations", "TEXT"), ("insights", "TEXT"),
+            ("north_star", "TEXT"), ("why_it_matters", "TEXT"),
+            ("show_up_style", "TEXT"), ("gratitude_items", "TEXT"),
+            ("priority_step", "TEXT"), ("tiny_steps", "TEXT"),
+            ("latitude", "REAL"), ("longitude", "REAL"),
+            ("sunrise_local", "TEXT"), ("sunset_local", "TEXT"),
+            ("morning_light_window", "TEXT"), ("evening_dim_window", "TEXT"),
+            ("ml_prediction", "REAL"), ("ml_training_rows", "INTEGER"),
+            ("ml_validation_rmse", "REAL"), ("ml_top_drivers", "TEXT"),
+            ("action_steps", "TEXT"), ("ai_coach_summary", "TEXT"),
+            ("ai_coach_model", "TEXT"), ("ai_coach_status", "TEXT"),
+            ("becoming_readout", "TEXT"), ("evening_readout", "TEXT"),
+            ("actual_energy", "REAL"), ("actual_focus", "REAL"),
+            ("actual_readiness", "REAL"), ("alive_moment", "TEXT"),
+            ("drained_moment", "TEXT"), ("alignment_score", "REAL"),
+            ("evening_lesson", "TEXT"), ("feedback_notes", "TEXT"),
             ("feedback_at", "TEXT"),
-        ):
-            if column_name not in existing_columns:
-                connection.execute(
-                    f"ALTER TABLE daily_entries ADD COLUMN {column_name} {column_type}"
-                )
+        ]
+        for col_name, col_type in migrations:
+            if col_name not in existing:
+                if IS_POSTGRES:
+                    _x(conn, f"ALTER TABLE daily_entries ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
+                else:
+                    _x(conn, f"ALTER TABLE daily_entries ADD COLUMN {col_name} {col_type}")
 
 
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────
 # USER FUNCTIONS
-# These three functions are all app.py needs
-# to handle registration and login.
-# ─────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────
 
 def create_user(email: str, password: str, name: str) -> User | None:
-    """
-    Create a new user account. Returns the User if successful,
-    None if the email is already taken.
-
-    generate_password_hash() turns 'mypassword123' into a long
-    scrambled string like '$2b$12$...' that can't be reversed.
-    """
-    password_hash = generate_password_hash(password)
+    hash_ = generate_password_hash(password)
     try:
-        with connect_db() as connection:
-            cursor = connection.execute(
-                "INSERT INTO users (email, password_hash, name) VALUES (?, ?, ?)",
-                (email.lower().strip(), password_hash, name.strip()),
-            )
-            return User(id=cursor.lastrowid, email=email, name=name)
-    except sqlite3.IntegrityError:
-        # Email already exists — UNIQUE constraint fired
+        with get_db() as conn:
+            if IS_POSTGRES:
+                cur = _x(conn,
+                    f"INSERT INTO users (email, password_hash, name) VALUES ({PH},{PH},{PH}) RETURNING id",
+                    (email.lower().strip(), hash_, name.strip()),
+                )
+                uid = cur.fetchone()['id']
+            else:
+                cur = _x(conn,
+                    f"INSERT INTO users (email, password_hash, name) VALUES ({PH},{PH},{PH})",
+                    (email.lower().strip(), hash_, name.strip()),
+                )
+                uid = cur.lastrowid
+        return User(id=uid, email=email, name=name)
+    except Exception:
         return None
 
 
 def get_user_by_email(email: str, password: str) -> User | None:
-    """
-    Look up a user by email and verify their password.
-    Returns User if credentials are correct, None otherwise.
-
-    check_password_hash() compares a plain password against
-    the stored hash — returns True if they match.
-    """
-    with connect_db() as connection:
-        row = connection.execute(
-            "SELECT * FROM users WHERE email = ?",
-            (email.lower().strip(),),
-        ).fetchone()
-
-    if row is None:
+    with get_db() as conn:
+        cur = _x(conn, f"SELECT * FROM users WHERE email = {PH}", (email.lower().strip(),))
+        row = cur.fetchone()
+    if not row:
         return None
-
-    if not check_password_hash(row["password_hash"], password):
+    row = dict(row)
+    if not check_password_hash(row['password_hash'], password):
         return None
-
-    return User(id=row["id"], email=row["email"], name=row["name"])
+    return User(id=row['id'], email=row['email'], name=row['name'])
 
 
 def get_user_by_id(user_id: int) -> User | None:
-    """
-    Load a user by their ID. Flask-Login calls this on every
-    page load to restore the session — it's how the app knows
-    who's logged in after they close and reopen their browser.
-    """
-    with connect_db() as connection:
-        row = connection.execute(
-            "SELECT * FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-
-    if row is None:
+    with get_db() as conn:
+        cur = _x(conn, f"SELECT * FROM users WHERE id = {PH}", (user_id,))
+        row = cur.fetchone()
+    if not row:
         return None
+    row = dict(row)
+    return User(id=row['id'], email=row['email'], name=row['name'])
 
-    return User(id=row["id"], email=row["email"], name=row["name"])
 
+# ─────────────────────────────────────────────────────────
+# ENTRY HELPERS
+# ─────────────────────────────────────────────────────────
 
-# ─────────────────────────────────────────────
-# ENTRY FUNCTIONS — now user-aware
-# ─────────────────────────────────────────────
-
-def row_to_entry(row: sqlite3.Row) -> dict[str, Any]:
+def row_to_entry(row) -> dict[str, Any]:
     entry = dict(row)
     for key in ("caffeine_events", "light", "recommendations", "action_steps",
                 "insights", "behavior_flags", "ml_top_drivers", "tiny_steps",
@@ -273,97 +236,71 @@ def row_to_entry(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def normalize_entry(entry: dict[str, Any]) -> dict[str, Any]:
-    normalized = dict(entry)
-    caffeine_events = normalized.get("caffeine_events")
-    legacy_caffeine = normalized.get("caffeine")
-    if not caffeine_events and isinstance(legacy_caffeine, list):
-        caffeine_events = legacy_caffeine
-    if isinstance(legacy_caffeine, list):
-        normalized["caffeine"] = sum(
-            event[0] for event in legacy_caffeine
-            if isinstance(event, (list, tuple)) and len(event) >= 1
+    n = dict(entry)
+    caffeine_events = n.get("caffeine_events")
+    legacy = n.get("caffeine")
+    if not caffeine_events and isinstance(legacy, list):
+        caffeine_events = legacy
+    if isinstance(legacy, list):
+        n["caffeine"] = sum(
+            e[0] for e in legacy if isinstance(e, (list, tuple)) and len(e) >= 1
         )
-    normalized["caffeine_events"] = caffeine_events or []
-    normalized["light"] = normalized.get("light", [])
-    if normalized.get("sleep_hours") is None:
-        start = normalized.get("sleep_start")
-        end = normalized.get("sleep_end")
-        if isinstance(start, (int, float)) and isinstance(end, (int, float)):
-            normalized["sleep_hours"] = (
-                round(end - start, 2) if end >= start
-                else round((24 - start) + end, 2)
-            )
-    return normalized
+    n["caffeine_events"] = caffeine_events or []
+    n["light"] = n.get("light", [])
+    if n.get("sleep_hours") is None:
+        s, e = n.get("sleep_start"), n.get("sleep_end")
+        if isinstance(s, (int, float)) and isinstance(e, (int, float)):
+            n["sleep_hours"] = round(e - s, 2) if e >= s else round((24 - s) + e, 2)
+    return n
 
 
-def list_entries(
-    limit: int | None = None,
-    user_id: int | None = None,
-) -> list[dict[str, Any]]:
-    """
-    List entries. If user_id is provided, only return that
-    user's entries. If None, return all (used for ML model).
-    """
+# ─────────────────────────────────────────────────────────
+# ENTRY CRUD
+# ─────────────────────────────────────────────────────────
+
+def list_entries(limit: int | None = None, user_id: int | None = None) -> list[dict[str, Any]]:
+    conditions, params = [], []
     if user_id is not None:
-        query = "SELECT * FROM daily_entries WHERE user_id = ? ORDER BY date ASC, id ASC"
-        params: tuple[Any, ...] = (user_id,)
-        if limit is not None:
-            query += " LIMIT ?"
-            params = (user_id, limit)
-    else:
-        query = "SELECT * FROM daily_entries ORDER BY date ASC, id ASC"
-        params = ()
-        if limit is not None:
-            query += " LIMIT ?"
-            params = (limit,)
-
-    with connect_db() as connection:
-        rows = connection.execute(query, params).fetchall()
-    return [row_to_entry(row) for row in rows]
+        conditions.append(f"user_id = {PH}")
+        params.append(user_id)
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    sql = f"SELECT * FROM daily_entries {where} ORDER BY date ASC, id ASC"
+    if limit is not None:
+        sql += f" LIMIT {PH}"
+        params.append(limit)
+    with get_db() as conn:
+        cur = _x(conn, sql, tuple(params) if params else None)
+        rows = cur.fetchall()
+    return [row_to_entry(r) for r in rows]
 
 
 def get_entry(entry_id: int) -> dict[str, Any] | None:
-    with connect_db() as connection:
-        row = connection.execute(
-            "SELECT * FROM daily_entries WHERE id = ?",
-            (entry_id,),
-        ).fetchone()
+    with get_db() as conn:
+        cur = _x(conn, f"SELECT * FROM daily_entries WHERE id = {PH}", (entry_id,))
+        row = cur.fetchone()
     return row_to_entry(row) if row else None
 
 
-def get_previous_entry(
-    entry_id: int,
-    user_id: int | None = None,
-) -> dict[str, Any] | None:
-    """
-    Get the entry just before entry_id for the same user.
-    """
-    with connect_db() as connection:
+def get_previous_entry(entry_id: int, user_id: int | None = None) -> dict[str, Any] | None:
+    with get_db() as conn:
         if user_id is not None:
-            row = connection.execute(
-                """
-                SELECT * FROM daily_entries
-                WHERE id < ? AND user_id = ?
-                ORDER BY id DESC LIMIT 1
-                """,
+            cur = _x(conn,
+                f"SELECT * FROM daily_entries WHERE id < {PH} AND user_id = {PH} ORDER BY id DESC LIMIT 1",
                 (entry_id, user_id),
-            ).fetchone()
+            )
         else:
-            row = connection.execute(
-                """
-                SELECT * FROM daily_entries
-                WHERE id < ?
-                ORDER BY id DESC LIMIT 1
-                """,
+            cur = _x(conn,
+                f"SELECT * FROM daily_entries WHERE id < {PH} ORDER BY id DESC LIMIT 1",
                 (entry_id,),
-            ).fetchone()
+            )
+        row = cur.fetchone()
     return row_to_entry(row) if row else None
 
 
 def insert_entry(entry: dict[str, Any]) -> int:
     entry = normalize_entry(entry)
     payload = {
-        "user_id": entry.get("user_id"),   # ← NEW
+        "user_id": entry.get("user_id"),
         "date": entry.get("date"),
         "sleep_start": entry.get("sleep_start"),
         "sleep_end": entry.get("sleep_end"),
@@ -421,42 +358,20 @@ def insert_entry(entry: dict[str, Any]) -> int:
         "behavior_flags": json.dumps(entry.get("behavior_flags", [])),
     }
 
-    with connect_db() as connection:
-        cursor = connection.execute(
-            """
-            INSERT INTO daily_entries (
-                user_id,
-                date, sleep_start, sleep_end, sleep_hours, sleep_quality, training, caffeine,
-                caffeine_events, light, focus_minutes, stress, screen_minutes,
-                movement_minutes, social_quality, north_star, why_it_matters, show_up_style,
-                gratitude_items, priority_step, tiny_steps, latitude, longitude, sunrise_local,
-                sunset_local, morning_light_window, evening_dim_window, energy, recovery,
-                sleep_debt, circadian_shift, circadian_status, performance_score, tomorrow_score,
-                ml_prediction, ml_training_rows, ml_validation_rmse, ml_top_drivers,
-                action_steps, ai_coach_summary, ai_coach_model, ai_coach_status,
-                becoming_readout, evening_readout,
-                actual_energy, actual_focus, actual_readiness, alive_moment, drained_moment,
-                alignment_score, evening_lesson, feedback_notes, feedback_at,
-                recommendations, insights, behavior_flags
-            ) VALUES (
-                :user_id,
-                :date, :sleep_start, :sleep_end, :sleep_hours, :sleep_quality, :training,
-                :caffeine, :caffeine_events, :light, :focus_minutes, :stress, :screen_minutes,
-                :movement_minutes, :social_quality, :north_star, :why_it_matters, :show_up_style,
-                :gratitude_items, :priority_step, :tiny_steps, :latitude, :longitude,
-                :sunrise_local, :sunset_local, :morning_light_window, :evening_dim_window,
-                :energy, :recovery, :sleep_debt, :circadian_shift, :circadian_status,
-                :performance_score, :tomorrow_score, :ml_prediction, :ml_training_rows,
-                :ml_validation_rmse, :ml_top_drivers, :action_steps, :ai_coach_summary,
-                :ai_coach_model, :ai_coach_status, :becoming_readout, :evening_readout,
-                :actual_energy, :actual_focus, :actual_readiness, :alive_moment, :drained_moment,
-                :alignment_score, :evening_lesson, :feedback_notes, :feedback_at,
-                :recommendations, :insights, :behavior_flags
-            )
-            """,
-            payload,
-        )
-        return int(cursor.lastrowid)
+    cols = list(payload.keys())
+    vals = [payload[c] for c in cols]
+
+    with get_db() as conn:
+        if IS_POSTGRES:
+            ph_list = ", ".join(["%s"] * len(cols))
+            sql = f"INSERT INTO daily_entries ({', '.join(cols)}) VALUES ({ph_list}) RETURNING id"
+            cur = _x(conn, sql, vals)
+            return cur.fetchone()['id']
+        else:
+            named = ", ".join(f":{c}" for c in cols)
+            sql = f"INSERT INTO daily_entries ({', '.join(cols)}) VALUES ({named})"
+            cur = _x(conn, sql, payload)
+            return cur.lastrowid
 
 
 def update_feedback(
@@ -472,41 +387,36 @@ def update_feedback(
     feedback_at: str,
     evening_readout: str | None = None,
 ) -> None:
-    with connect_db() as connection:
-        connection.execute(
-            """
+    with get_db() as conn:
+        _x(conn, f"""
             UPDATE daily_entries
-            SET actual_energy = ?, actual_focus = ?, actual_readiness = ?,
-                alive_moment = ?, drained_moment = ?, alignment_score = ?,
-                evening_lesson = ?, feedback_notes = ?, feedback_at = ?,
-                evening_readout = ?
-            WHERE id = ?
-            """,
-            (
-                actual_energy, actual_focus, actual_readiness,
-                alive_moment, drained_moment, alignment_score,
-                evening_lesson, feedback_notes, feedback_at,
-                evening_readout, entry_id,
-            ),
-        )
+            SET actual_energy = {PH}, actual_focus = {PH}, actual_readiness = {PH},
+                alive_moment = {PH}, drained_moment = {PH}, alignment_score = {PH},
+                evening_lesson = {PH}, feedback_notes = {PH}, feedback_at = {PH},
+                evening_readout = {PH}
+            WHERE id = {PH}
+        """, (
+            actual_energy, actual_focus, actual_readiness,
+            alive_moment, drained_moment, alignment_score,
+            evening_lesson, feedback_notes, feedback_at,
+            evening_readout, entry_id,
+        ))
 
 
 def ensure_seed_data() -> None:
     init_db()
-    with connect_db() as connection:
-        existing = connection.execute(
-            "SELECT COUNT(*) FROM daily_entries"
-        ).fetchone()[0]
+    with get_db() as conn:
+        cur = _x(conn, "SELECT COUNT(*) FROM daily_entries")
+        row = cur.fetchone()
+        existing = list(dict(row).values())[0]
     if existing or not os.path.exists(LEGACY_LOG_PATH):
         return
-
-    with open(LEGACY_LOG_PATH, "r", encoding="utf-8") as handle:
-        for line in handle:
+    with open(LEGACY_LOG_PATH, "r", encoding="utf-8") as f:
+        for line in f:
             line = line.strip()
             if not line:
                 continue
             try:
-                entry = json.loads(line)
+                insert_entry(json.loads(line))
             except json.JSONDecodeError:
                 continue
-            insert_entry(entry)
