@@ -385,7 +385,14 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("login"))
-@app.route("/", methods=["GET", "POST"])
+
+@app.route("/")
+def landing():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    return render_template("landing.html")
+
+@app.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def index():
     entries = list_entries()
