@@ -196,7 +196,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
         client = anthropic.Anthropic(api_key=api_key)
 
         message = client.messages.create(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-6",
             max_tokens=1200,
             system=BECOMING_SYSTEM_PROMPT,
             messages=[
@@ -221,7 +221,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
 
         return {
             "ai_coach_summary": plain_summary,
-            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_model": "claude-sonnet-4-6",
             "ai_coach_status": "ready",
             "becoming_readout": readout,  # structured version for future UI upgrade
         }
@@ -230,7 +230,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
         # Claude returned something we couldn't parse — use raw text
         return {
             "ai_coach_summary": raw if "raw" in dir() else "Readout unavailable.",
-            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_model": "claude-sonnet-4-6",
             "ai_coach_status": "ready",
             "becoming_readout": None,
         }
@@ -240,7 +240,7 @@ def generate_ai_coach_summary(entry: dict[str, Any]) -> dict[str, Any]:
         traceback.print_exc()  # This will show in Render logs
         return {
             "ai_coach_summary": None,
-            "ai_coach_model": "claude-sonnet-4-5",
+            "ai_coach_model": "claude-sonnet-4-6",
             "ai_coach_status": f"AI readout unavailable: {exc}",
             "becoming_readout": None,
         }
@@ -388,7 +388,7 @@ def generate_evening_reflection(entry: dict[str, Any]) -> dict[str, Any]:
         client = anthropic.Anthropic(api_key=api_key)
 
         message = client.messages.create(
-            model="claude-sonnet-4-5",
+            model="claude-sonnet-4-6",
             max_tokens=600,
             system=EVENING_SYSTEM_PROMPT,
             messages=[
