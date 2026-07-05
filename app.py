@@ -505,23 +505,7 @@ def feedback(entry_id: int):
         reflected=reflected,
     )
 
-@app.route("/test-claude")
-def test_claude():
-    import os
-    import anthropic
-    key = os.getenv("ANTHROPIC_API_KEY")
-    if not key:
-        return f"NO API KEY FOUND"
-    try:
-        client = anthropic.Anthropic(api_key=key)
-        msg = client.messages.create(
-            model="claude-sonnet-4-6",
-            max_tokens=20,
-            messages=[{"role": "user", "content": "Say hello."}]
-        )
-        return f"SUCCESS: {msg.content[0].text}"
-    except Exception as e:
-        return f"FAILED: {type(e).__name__}: {e}"
+
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8000"))
