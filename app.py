@@ -355,7 +355,7 @@ def register():
             return render_template("register.html")
 
         login_user(user)
-        return redirect(url_for("index"))
+        return redirect(url_for("onboarding"))
 
     return render_template("register.html")
 
@@ -385,6 +385,11 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("login"))
+
+@app.route("/onboarding")
+@login_required
+def onboarding():
+    return render_template("onboarding.html")
 
 @app.route("/")
 def landing():

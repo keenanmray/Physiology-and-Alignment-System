@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Becoming — Welcome</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <style>
+    .onboarding-page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+    .welcome-mark {
+      font-size: 3rem;
+      line-height: 0.85;
+      letter-spacing: -0.04em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .onboarding-hero {
+      padding: 48px 0 40px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 40px;
+    }
+    .onboarding-hero h1 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.05;
+      max-width: 18ch;
+      margin-bottom: 20px;
+    }
+    .onboarding-hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 52ch;
+    }
+    .insight-block {
+      background: linear-gradient(135deg, rgba(47,108,87,0.06), rgba(47,108,87,0.02));
+      border: 1px solid rgba(47,108,87,0.2);
+      border-left: 3px solid var(--accent);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 32px;
+    }
+    .insight-block p {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--ink);
+      margin: 0;
+    }
+    .insight-block p + p {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+    .steps-block {
+      margin-bottom: 40px;
+    }
+    .steps-block h2 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+    }
+    .step-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fffaf2;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-row h3 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+    .step-row p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
+    .north-star-block {
+      background: var(--ink);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 36px;
+    }
+    .north-star-block h2 {
+      color: #fffaf2;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .north-star-block p {
+      color: #9a8870;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .north-star-block .example {
+      color: var(--accent);
+      font-style: italic;
+      font-size: 0.92rem;
+    }
+    .start-button {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #0f8a66);
+      color: #fffaf2;
+      font-family: Georgia, serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      padding: 18px;
+      border-radius: 999px;
+      text-align: center;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .start-sub {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="onboarding-page">
+
+    <div class="onboarding-hero">
+      <p class="eyebrow">Welcome, {{ current_user.name }}</p>
+      <h1>You become what you repeatedly believe you are.</h1>
+      <p>
+        Most apps track what you do. Becoming starts with who you are becoming —
+        then grounds that in your actual biology. The result is a daily readout
+        that speaks to both at once.
+      </p>
+    </div>
+
+    <div class="insight-block">
+      <p>
+        Research in psychology shows that our self-concept — how we genuinely
+        think and feel about ourselves — determines what actions feel natural
+        to us. A strong, clear identity generates strong, aligned behavior
+        automatically.
+      </p>
+      <p>
+        Becoming is built on this. Every day you clarify who you're becoming,
+        log the biology that shapes your energy, and Claude bridges both into
+        three grounded actions. Do this daily and the compounding is real.
+      </p>
+    </div>
+
+    <div class="steps-block">
+      <h2>Here's how your first entry works:</h2>
+
+      <div class="step-row">
+        <div class="step-number">1</div>
+        <div>
+          <h3>Set your North Star</h3>
+          <p>Who are you becoming? Not your goals — your identity. The person you are actively building toward. This is the most important thing you'll write.</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-number">2</div>
+        <div>
+          <h3>Log your biology</h3>
+          <p>Sleep, morning light, caffeine, movement, stress. Rough honest estimates — takes 2 minutes. This is what lets Claude speak to your actual energy today, not a generic version of you.</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-number">3</div>
+        <div>
+          <h3>Get your readout</h3>
+          <p>Claude reads your biology and your north star together and returns a score, an honest read, and three grounded steps — one for your body, one for your direction, one for your identity.</p>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-number">4</div>
+        <div>
+          <h3>Close the loop tonight</h3>
+          <p>Come back in the evening for a 2-minute reflection. Claude compares your morning intention with your evening reality — and seeds tomorrow.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="north-star-block">
+      <h2>Before you start — think about your North Star.</h2>
+      <p>
+        Don't rush this. Your North Star isn't a goal — it's an identity statement.
+        Who is the person you are actively choosing to become?
+      </p>
+      <p class="example">
+        "I am a healthy, grounded, and formidable person. I show up fully in all
+        areas of my life and build things that matter."
+      </p>
+      <p>
+        Write it in the present tense, as if it's already true. That's not
+        delusion — that's how identity change actually works.
+      </p>
+    </div>
+
+    <a class="start-button" href="{{ url_for('index') }}">
+      Start my first entry →
+    </a>
+    <p class="start-sub">Takes about 7 minutes. Worth every one of them.</p>
+
+  </main>
+</body>
+</html>
