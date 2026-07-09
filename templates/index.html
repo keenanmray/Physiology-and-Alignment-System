@@ -291,6 +291,22 @@
             </div>
           {% endif %}
 
+          <div class="detail-block" style="text-align: center; padding: 24px 0 8px;">
+            <p class="muted" style="margin-bottom: 16px; font-size: 0.9rem;">Come back tonight to close the loop.</p>
+            <a href="{{ url_for('feedback', entry_id=result.id) }}"
+               style="display: inline-block;
+                      background: linear-gradient(135deg, var(--accent), #0f8a66);
+                      color: #fffaf2;
+                      font-family: Georgia, serif;
+                      font-size: 1rem;
+                      font-weight: 700;
+                      padding: 14px 32px;
+                      border-radius: 999px;
+                      text-decoration: none;">
+              Close the loop tonight →
+            </a>
+          </div>
+
         {% else %}
           <div class="empty-state">
             <h3>No analysis yet</h3>
